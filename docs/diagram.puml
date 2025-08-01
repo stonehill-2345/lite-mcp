@@ -1,0 +1,140 @@
+@startuml
+title TestMCP Framework Architecture
+
+
+skinparam backgroundColor #F8F9FA
+
+
+package DependencyManagement {
+    [Poetry] #FF9FF3
+    [pyproject.toml] #FF9FF3
+    [poetry.lock] #FF9FF3
+    [requirements.txt] #FF9FF3
+    
+    Poetry --> pyproject.toml
+    Poetry --> poetry.lock
+    Poetry --> requirements.txt
+}
+
+
+package Configuration {
+    [servers.yaml] #FF9FF3
+    [env.example] #FF9FF3
+    [registry.json] #FF9FF3
+    [pids] #FF9FF3
+    [logs] #FF9FF3
+}
+
+
+package CoreServices {
+    [MCPProxyServer] #4ECDC4
+    [APIServer] #45B7D1
+    [ConfigAPI] #45B7D1
+    [Registry] #FF6B6B
+    [Logger] #FF6B6B
+    [Utils] #FF6B6B
+    
+    APIServer --> ConfigAPI
+    MCPProxyServer --> Registry
+}
+
+
+package MCPImplementation {
+    [BaseMCPServer] #96CEB4
+    [ExampleMCPServer] #96CEB4
+    [SchoolMCPServer] #96CEB4
+    [AVAILABLE_SERVERS] #FECA57
+    
+    BaseMCPServer --> ExampleMCPServer
+    BaseMCPServer --> SchoolMCPServer
+    AVAILABLE_SERVERS --> ExampleMCPServer
+    AVAILABLE_SERVERS --> SchoolMCPServer
+}
+
+
+package StartupManagement {
+    [CLI] #54A0FF
+    [manage.sh] #54A0FF
+    [StartupFlow] #54A0FF
+}
+
+
+package ClientIntegration {
+    [CursorConfig] #45B7D1
+    [ClaudeDesktopConfig] #45B7D1
+    [StreamableHttpProtocol] #4ECDC4
+    [DirectAccess] #4ECDC4
+    [ProxyAccess] #4ECDC4
+}
+
+
+package MCPClient {
+    [Cursor] #FFB6C1
+}
+
+
+' Proxy access mode (Recommended) - Solid line
+Cursor --> MCPProxyServer : 🌟 Proxy Access\nhttp://IP:1888/sse/{server}
+MCPProxyServer --> ExampleMCPServer : forward
+MCPProxyServer --> SchoolMCPServer : forward
+
+
+' Direct access mode (Development debugging) - Dashed line
+Cursor ..> ExampleMCPServer :  🔧 Direct Access\nhttp://IP:PORT/sse
+
+
+' Other relationships
+ConfigAPI --> CursorConfig : generate
+ConfigAPI --> ClaudeDesktopConfig : generate
+CLI --> AVAILABLE_SERVERS : discover
+manage.sh --> servers.yaml : read
+manage.sh --> Registry : manage
+Poetry --> BaseMCPServer : dependencies
+StartupFlow --> MCPProxyServer : start
+StartupFlow --> APIServer : start
+
+
+' Core component descriptions
+note bottom of MCPProxyServer
+🌟 MCPProxyServer - Core proxy server
+• Unified access point (port 1888)
+• Path forwarding: /sse/{server}/*
+• Automatic session management
+• Solves dynamic port allocation
+• Recommended for production
+end note
+
+
+note bottom of BaseMCPServer
+🏗️ BaseMCPServer - Development framework
+• Rapid development through inheritance
+• Multi-protocol support (STDIO/HTTP/SSE)
+• @tool decorator registration
+• Zero-config startup
+end note
+
+
+' Main component functionality table
+legend bottom
+|= Component Type |= Component Name |= Main Function |= Description |
+| Client | Cursor | MCP client example | Supports two access modes |
+| Access Mode | Proxy Access | Via MCPProxyServer |  🌟 Fixed address, production recommended |
+| Access Mode | Direct Access | Direct to MCP server | 🔧 Dynamic port, development debugging |
+| Config Mgmt | servers.yaml | Server startup config | Defines MCP server list, protocols, ports etc. |
+| Config Mgmt | registry.json | Dynamic service registry | Records running server IP-port mapping |
+| Config Mgmt | pids/ | Process management dir | Stores process PIDs, supports start/stop control |
+| Config Mgmt | logs/ | Log storage dir | Categorized storage of server logs |
+| Startup Mgmt | CLI | Command line tool | python src/cli.py serve --server xxx |
+| Startup Mgmt | manage.sh | Unified management script | ./manage.sh up/down/ps/reboot |
+| Startup Mgmt | StartupFlow | Startup process orchestration | Env check→Dependency install→Start service→Register |
+| Core Service | MCPProxyServer | Reverse proxy server | Port 1888, unified access point |
+| Core Service | APIServer | Config API server | Port 9000, provides config management API |
+| MCP Impl | BaseMCPServer | MCP base framework | Abstract base class, inheritance-based development |
+| MCP Impl | ExampleMCPServer | Example server | Numerical calculation tool demo |
+| MCP Impl | SchoolMCPServer | School management server | School information management tool |
+| Dep Mgmt | Poetry | Dependency mgmt tool | Modern Python package mgmt, auto environment |
+| Dep Mgmt | pyproject.toml | Project config file | Defines project metadata and dependencies |
+endlegend
+
+
+@enduml

@@ -1,0 +1,54 @@
+# TestMCP Server Startup Configuration
+# This config file defines all MCP servers and API servers to be started when executing scripts/manage.sh
+
+
+# MCP Server Configuration
+mcp_servers:
+  example:
+    enabled: true                    # Whether to enable this server
+    server_type: "example"           # Server type (corresponds to AVAILABLE_SERVERS key)
+    transport: "http"                # Transport protocol: stdio/http/sse
+    host: null                       # Automatically gets current machine IP, externally accessible
+    port: null                       # Port number, null means auto-assigned
+    auto_restart: true               # Whether to auto-restart
+    description: "Example server"
+
+  school:
+    enabled: true
+    server_type: "school"
+    transport: "http"
+    host: null                       # Automatically gets current machine IP, externally accessible
+    port: null                       # Auto-assigned port
+    auto_restart: true
+    description: "School management server"
+
+
+# Additional custom servers
+
+# Reverse Proxy Server Configuration
+proxy_server:
+  enabled: true                      # Whether to enable proxy server
+  host: "0.0.0.0"                    # Bind to all network interfaces, allow external access
+  port: 1888                         # Proxy server fixed port
+  auto_restart: true                 # Whether to auto-restart
+  auto_register: true                # Whether to auto-register MCP servers to proxy
+  description: "MCP reverse proxy server"
+
+  # Timeout configuration (seconds)
+  timeout: 30                        # Overall timeout
+  connect_timeout: 5                 # Connection timeout
+
+  # Path routing rules:
+  # - /mcp/{server_name}/* -> Forward to corresponding server's HTTP endpoint
+  # - /sse/{server_name}/* -> Forward to corresponding server's SSE endpoint
+  # - /proxy/status -> Proxy status query
+  # - /proxy/mapping -> Server mapping query
+
+
+# API Server Configuration
+api_server:
+  enabled: true                      # Whether to enable API server
+  host: null                         # Automatically gets current machine IP, externally accessible
+  port: 9000                         # API server port
+  auto_restart: true                 # Whether to auto-restart
+  description: "Configuration API server"
