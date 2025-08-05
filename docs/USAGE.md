@@ -30,7 +30,7 @@ A simple Model Context Protocol (MCP) server framework designed to solve issues 
 **Installation Steps**:
 ```bash
 # Clone project
-git clone https://github.com/hlw-tech/lite-mcp
+git clone https://github.com/stonehill-2345/lite-mcp
 cd lite-mcp
 
 # Install dependencies (auto-detect Poetry or pip)

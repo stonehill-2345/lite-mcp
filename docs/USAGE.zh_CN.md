@@ -32,7 +32,7 @@
 **安装步骤**：
 ```bash
 # 克隆项目
-git clone https://github.com/hlw-tech/lite-mcp
+git clone https://github.com/stonehill-2345/lite-mcp
 cd lite-mcp
 
 # 安装依赖（自动检测Poetry或pip）

@@ -22,7 +22,7 @@ LiteMCP Framework fully supports Windows, macOS, and Linux operating systems, en
 
 ```bash
 # Clone the project
-git clone https://github.com/hlw-tech/lite-mcp
+git clone https://github.com/stonehill-2345/lite-mcp
 cd lite-mcp
 
 # Install dependencies (automatically detects Poetry or pip)
