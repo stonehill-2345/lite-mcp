@@ -390,6 +390,19 @@ LiteMCP Framework 集成了以下开源项目和库，为 MCP 服务器开发提
 4. 为新功能添加测试
 5. 提交 Pull Request
 
+#### 提交信息规范
+请在提交信息中使用以下前缀之一：
+
+- `feat:` - 新功能
+- `fix:` - 修复bug
+- `docs:` - 文档更改
+- `style:` - 代码格式化（不影响功能）
+- `refactor:` - 代码重构
+- `test:` - 添加或更新测试
+- `chore:` - 维护任务
+
+示例：`feat: 添加文件操作MCP服务器`
+
 
 ### 许可证
 本项目采用 MIT 许可证 - 详情请参阅 [LICENSE](../LICENSE) 文件。

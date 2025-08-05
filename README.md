@@ -389,6 +389,19 @@ We welcome contributions from the community! If you'd like to contribute to Lite
 4. Add tests for new functionality
 5. Submit a pull request
 
+#### Commit Message Convention
+Please use one of the following prefixes for your commit messages:
+
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation changes
+- `style:` - Code formatting (no functional changes)
+- `refactor:` - Code refactoring
+- `test:` - Adding or updating tests
+- `chore:` - Maintenance tasks
+
+Example: `feat: add new MCP server for file operations`
+
 
 ### License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
