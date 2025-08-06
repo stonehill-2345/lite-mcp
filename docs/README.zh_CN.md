@@ -2,6 +2,8 @@
 
 中文 | [English](../README.md)
 
+![icon](ProjectIcon.png)
+
 一个简单的 Model Context Protocol (MCP) 服务器框架，专为解决当前 MCP 服务器集群中节点分散、管理混乱、访问入口不统一等问题设计，提供简洁高效的工具开发与管控模式。
 
 LiteMCP Framework 全面支持 Windows、macOS 和 Linux 三大操作系统，确保跨平台环境下的一致体验，核心优势包括：

@@ -2,6 +2,8 @@
 
 English | [中文](docs/README.zh_CN.md)
 
+![icon](docs/ProjectIcon.png)
+
 A simple Model Context Protocol (MCP) server framework designed to solve issues like scattered nodes, management chaos, and inconsistent access points in current MCP server clusters, providing a concise and efficient tool development and management solution.
 
 LiteMCP Framework fully supports Windows, macOS, and Linux operating systems, ensuring a consistent experience across platforms. Key advantages include:
@@ -11,7 +13,7 @@ LiteMCP Framework fully supports Windows, macOS, and Linux operating systems, en
 - Simple and extensible architecture, easily handling dynamically growing server counts
 - Built-in intelligent proxy server that integrates distributed nodes into a unified access point, eliminating the complexity of managing multiple servers
 
-
+Create README.md add project introduction
 ## 🚀 Quick Start
 
 - **Python 3.12+** - For multiple Python versions, consider using tools like [pyenv](https://github.com/pyenv/pyenv)
