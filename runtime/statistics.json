@@ -1704,13 +1704,211 @@
       "create_time": "2025-07-29 17:39:01",
       "last_update": "2025-07-29 17:44:57",
       "tool_count": 1
+    },
+    "LiteMCP-Example": {
+      "name": "LiteMCP-Example",
+      "class_name": "ExampleMCPServer",
+      "module": "src.tools.demo.example_server",
+      "description": "Example MCP Server - Complete Development Example\n\nThis example demonstrates:\n1. How to inherit from BaseMCPServer\n2. How to register multiple tools\n3. How to handle parameters and errors\n4. How to write docstrings\n5. New simplified author information usage\n\nWhen developing new tools, copy this file and modify:\n1. Class name: ExampleMCPServer → YourToolMCPServer\n2. Server name: LiteMCP-Example → LiteMCP-YourTool\n3. Tool functions: add_numbers, multiply_numbers → your_functions",
+      "tools": [
+        {
+          "name": "add_numbers",
+          "description": "Number addition tool - Inherits server author information\n\nArgs:\n    a: First number\n    b: Second number\n\nReturns:\n    String representation of the calculation result",
+          "function_name": "add_numbers",
+          "module": "src.tools.demo.example_server",
+          "params": [
+            "a: float",
+            "b: float"
+          ],
+          "return_type": "str",
+          "create_time": "2025-09-05 11:49:36",
+          "author": {
+            "name": "Bab",
+            "email": "bab@2345.com",
+            "department": "TestingDepartment",
+            "project": [
+              "TD"
+            ],
+            "create_time": "2025-09-05 11:49:36"
+          }
+        },
+        {
+          "name": "multiply_numbers",
+          "description": "Number multiplication tool - Uses @mcp_author decorator (new method)\n\nArgs:\n    a: First number\n    b: Second number\n\nReturns:\n    String representation of the calculation result",
+          "function_name": "multiply_numbers",
+          "module": "src.tools.demo.example_server",
+          "params": [
+            "a: float",
+            "b: float"
+          ],
+          "return_type": "str",
+          "create_time": "2025-09-05 11:49:36",
+          "author": {
+            "name": "Bab",
+            "email": "bab@2345.com",
+            "department": "TestingDepartment",
+            "project": [
+              "TD"
+            ],
+            "create_time": "2025-09-05 11:49:36"
+          }
+        },
+        {
+          "name": "divide_numbers",
+          "description": "Number division tool - Uses @mcp_author decorator\n\nArgs:\n    a: Dividend\n    b: Divisor\n\nReturns:\n    String representation of the calculation result",
+          "function_name": "divide_numbers",
+          "module": "src.tools.demo.example_server",
+          "params": [
+            "a: float",
+            "b: float"
+          ],
+          "return_type": "str",
+          "create_time": "2025-09-05 11:49:36",
+          "author": {
+            "name": "Bab",
+            "email": "bab@2345.com",
+            "department": "TestingDepartment",
+            "project": [
+              "TD"
+            ],
+            "create_time": "2025-09-05 11:49:36"
+          }
+        },
+        {
+          "name": "subtract_numbers",
+          "description": "Number subtraction tool - Uses @mcp_author decorator with partial override\n\nArgs:\n    a: Minuend\n    b: Subtrahend\n\nReturns:\n    String representation of the calculation result",
+          "function_name": "subtract_numbers",
+          "module": "src.tools.demo.example_server",
+          "params": [
+            "a: float",
+            "b: float"
+          ],
+          "return_type": "str",
+          "create_time": "2025-09-05 11:49:36",
+          "author": {
+            "name": "Bab",
+            "email": "bab@2345.com",
+            "department": "TestingDepartment",
+            "project": [
+              "TD"
+            ],
+            "create_time": "2025-09-05 11:49:36"
+          }
+        }
+      ],
+      "author": {
+        "name": "Bab",
+        "email": "bab@2345.com",
+        "department": "TestingDepartment",
+        "project": [
+          "TD"
+        ],
+        "create_time": "2025-09-05 11:49:36"
+      },
+      "create_time": "2025-09-05 11:49:36",
+      "last_update": "2025-09-05 11:49:36",
+      "tool_count": 4
+    },
+    "LiteMCP-School": {
+      "name": "LiteMCP-School",
+      "class_name": "SchoolMCPServer",
+      "module": "src.tools.demo.school_server",
+      "description": "Example MCP Server - Complete Development Example\n\nThis example demonstrates:\n1. How to inherit from BaseMCPServer\n2. How to register multiple tools\n3. How to handle parameters and errors\n4. How to write docstrings\n\nWhen developing new tools, copy this file and modify:\n1. Class name: ExampleMCPServer → YourToolMCPServer\n2. Server name: LiteMCP-Example → LiteMCP-YourTool\n3. Tool functions: add_numbers, multiply_numbers → your_functions",
+      "tools": [
+        {
+          "name": "school_name",
+          "description": "Get school name\n\nReturns:\n    School name",
+          "function_name": "school_name",
+          "module": "src.tools.demo.school_server",
+          "params": [],
+          "return_type": "str",
+          "create_time": "2025-09-05 11:49:40",
+          "author": {
+            "name": "John Doe",
+            "email": null,
+            "department": "TestingDepartment",
+            "project": [
+              "TD"
+            ],
+            "create_time": "2025-09-05 11:49:40"
+          }
+        },
+        {
+          "name": "students_number",
+          "description": "Get number of students\n\nReturns:\n    Number of students",
+          "function_name": "students_number",
+          "module": "src.tools.demo.school_server",
+          "params": [],
+          "return_type": "int",
+          "create_time": "2025-09-05 11:49:40",
+          "author": {
+            "name": "John Doe",
+            "email": null,
+            "department": "TestingDepartment",
+            "project": [
+              "TD"
+            ],
+            "create_time": "2025-09-05 11:49:40"
+          }
+        },
+        {
+          "name": "teachers_number",
+          "description": "Get number of teachers\n\nReturns:\n    Number of teachers",
+          "function_name": "teachers_number",
+          "module": "src.tools.demo.school_server",
+          "params": [],
+          "return_type": "int",
+          "create_time": "2025-09-05 11:49:40",
+          "author": {
+            "name": "Bab",
+            "email": null,
+            "department": "TestingDepartment",
+            "project": [
+              "TD"
+            ],
+            "create_time": "2025-09-05 11:49:40"
+          }
+        },
+        {
+          "name": "opening_date",
+          "description": "Get school opening date\n\nArgs:\n    semester: Semester to query, options: 'spring' (first half) or 'autumn' (second half)\n\nReturns:\n    String representation of the result",
+          "function_name": "opening_date",
+          "module": "src.tools.demo.school_server",
+          "params": [
+            "semester: str"
+          ],
+          "return_type": "str",
+          "create_time": "2025-09-05 11:49:40",
+          "author": {
+            "name": "John Doe",
+            "email": null,
+            "department": "TestingDepartment",
+            "project": [
+              "TD"
+            ],
+            "create_time": "2025-09-05 11:49:40"
+          }
+        }
+      ],
+      "author": {
+        "name": "John Doe",
+        "email": null,
+        "department": "TestingDepartment",
+        "project": [
+          "TD"
+        ],
+        "create_time": "2025-09-05 11:49:40"
+      },
+      "create_time": "2025-09-05 11:49:40",
+      "last_update": "2025-09-05 11:49:40",
+      "tool_count": 4
     }
   },
   "summary": {
-    "total_servers": 12,
+    "total_servers": 14,
     "total_tools": 70,
-    "total_authors": 10,
-    "total_departments": 4,
+    "total_authors": 12,
+    "total_departments": 5,
     "total_projects": 8,
     "top_authors": [
       {
@@ -1756,6 +1954,20 @@
         "tool_count": 5
       },
       {
+        "name": "Bab",
+        "email": "bab@2345.com",
+        "department": "TestingDepartment",
+        "server_count": 1,
+        "tool_count": 5
+      },
+      {
+        "name": "John Doe",
+        "email": null,
+        "department": "TestingDepartment",
+        "server_count": 1,
+        "tool_count": 3
+      },
+      {
         "name": "廖浩宇",
         "email": null,
         "department": "测试部",
@@ -1768,20 +1980,6 @@
         "department": "测试部",
         "server_count": 1,
         "tool_count": 2
-      },
-      {
-        "name": "未知作者",
-        "email": null,
-        "department": null,
-        "server_count": 1,
-        "tool_count": 1
-      },
-      {
-        "name": "吴燕娇",
-        "email": null,
-        "department": "测试部",
-        "server_count": 1,
-        "tool_count": 1
       }
     ],
     "departments": [
@@ -1791,13 +1989,13 @@
         "tool_count": 55,
         "author_count": 7,
         "authors": [
-          "吴燕娇",
-          "焦海棠",
           "卓庆荣",
-          "钱鹏",
+          "周顺",
+          "焦海棠",
           "魏兵cs",
+          "钱鹏",
           "廖浩宇",
-          "周顺"
+          "吴燕娇"
         ]
       },
       {
@@ -1810,6 +2008,16 @@
         ]
       },
       {
+        "name": "TestingDepartment",
+        "server_count": 2,
+        "tool_count": 8,
+        "author_count": 2,
+        "authors": [
+          "Bab",
+          "John Doe"
+        ]
+      },
+      {
         "name": "开发部",
         "server_count": 0,
         "tool_count": 7,
@@ -1819,7 +2027,7 @@
         ]
       },
       {
-        "name": "未知部门",
+        "name": "Unknown Department",
         "server_count": 1,
         "tool_count": 1,
         "author_count": 1,
@@ -1831,12 +2039,14 @@
     "projects": [
       {
         "name": "TD",
-        "server_count": 5,
-        "tool_count": 34,
-        "author_count": 2,
+        "server_count": 7,
+        "tool_count": 42,
+        "author_count": 4,
         "authors": [
+          "Wei Bingcs",
+          "Bab",
           "魏兵cs",
-          "Wei Bingcs"
+          "John Doe"
         ]
       },
       {
@@ -1845,8 +2055,8 @@
         "tool_count": 11,
         "author_count": 2,
         "authors": [
-          "廖浩宇",
-          "周顺"
+          "周顺",
+          "廖浩宇"
         ]
       },
       {
@@ -1896,7 +2106,7 @@
         ]
       },
       {
-        "name": "未知项目",
+        "name": "Unknown Project",
         "server_count": 1,
         "tool_count": 1,
         "author_count": 1,
@@ -1937,6 +2147,16 @@
         "tool_count": 5
       },
       {
+        "name": "Bab",
+        "sever_count": 1,
+        "tool_count": 5
+      },
+      {
+        "name": "John Doe",
+        "sever_count": 1,
+        "tool_count": 3
+      },
+      {
         "name": "廖浩宇",
         "sever_count": 1,
         "tool_count": 2
@@ -1958,5 +2178,5 @@
       }
     ]
   },
-  "last_update": "2025-07-30 14:25:23"
+  "last_update": "2025-09-05 11:49:40"
 }

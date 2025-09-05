@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 from src.core.registry import server_registry, ServerInfo
 from src.core.utils import get_project_root
 from src.core.logger import LoggerMixin
+from src.core.statistics import collect_server_statistics
 from fastmcp.server.dependencies import get_http_headers
 
 # Automatically ensure project root is in Python path
@@ -55,6 +56,9 @@ class BaseMCPServer(LoggerMixin, ABC):
 
         # Subclasses must implement tool registration
         self._register_tools()
+
+        # statistics info
+        collect_server_statistics(self)
 
     def _create_cors_middleware(self):
         """Create CORS middleware"""

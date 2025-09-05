@@ -1,6 +1,8 @@
 from src.tools.base import BaseMCPServer
+from src.core.statistics import mcp_author
 
 
+@mcp_author("John Doe", department="TestingDepartment", project=["TD"])
 class SchoolMCPServer(BaseMCPServer):
     """Example MCP Server - Complete Development Example
 
@@ -44,6 +46,7 @@ class SchoolMCPServer(BaseMCPServer):
             return 20
 
         @self.mcp.tool()
+        @mcp_author("Bab", department="TestingDepartment", project=["TD"])
         def teachers_number() -> int:
             """
             Get number of teachers

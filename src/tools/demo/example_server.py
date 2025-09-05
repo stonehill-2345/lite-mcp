@@ -6,8 +6,10 @@ Testers can copy this file as a starting point for new tools.
 """
 
 from src.tools.base import BaseMCPServer
+from src.core.statistics import mcp_author
 
 
+@mcp_author("Bab", email="bab@2345.com", department="TestingDepartment", project=["TD"])
 class ExampleMCPServer(BaseMCPServer):
     """Example MCP Server - Complete Development Example
 

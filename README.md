@@ -27,11 +27,13 @@ Create README.md add project introduction
 git clone https://github.com/stonehill-2345/lite-mcp
 cd lite-mcp
 
-# Install dependencies (automatically detects Poetry or pip)
-./scripts/manage.sh setup
+# Install dependencies
+poetry install
 
-# Verify installation
-./scripts/manage.sh check
+# Activate virtual env
+poetry env activate 
+# Poetry version < 2.0
+poetry shell
 ```
 
 ### Management Script Instructions

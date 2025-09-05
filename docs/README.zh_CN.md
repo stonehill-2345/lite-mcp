@@ -28,11 +28,13 @@ LiteMCP Framework 全面支持 Windows、macOS 和 Linux 三大操作系统，�
 git clone https://github.com/stonehill-2345/lite-mcp
 cd lite-mcp
 
-# 安装依赖（自动检测Poetry或pip）
-./scripts/manage.sh setup
+# 安装依赖
+poetry install
 
-# 验证安装
-./scripts/manage.sh check
+# 激活虚拟环境
+poetry env activate 
+# 当Poetry版本低于2.0
+poetry shell
 ```
 
 ### 管理脚本说明
@@ -340,7 +342,7 @@ tail -f logs/example.log  # 实时查看特定日志
  - 开发者：重点查看 [开发新工具](USAGE.zh_CN.md#-开发新工具) 章节
  - 运维人员：参考 [故障排除指南](USAGE.zh_CN.md#-故障排除) 和命令列表
 
-### 内置示例服务
+### 内置基础服务
 
 | 服务器类型 | 描述 | 用途 |
 |-----------|------|------|
