@@ -2656,219 +2656,6 @@ class CrossPlatformManager:
             pid_file.unlink()
         
         self.log_success("Cleanup completed", f"Deleted {len(log_files)} log files and {len(pid_files)} PID files")
-    
-    def install_dependencies(self):
-        """Install dependencies"""
-        self.show_header("Install/Update Project Dependencies")
-        
-        # Required dependencies
-        required_packages = [
-            "psutil",
-            "pyyaml", 
-            "requests"
-        ]
-        
-        # Optional dependencies
-        optional_packages = [
-            "rich"
-        ]
-        
-        all_success = True
-        
-        if self.use_poetry:
-            self.log_info("Installing dependencies with Poetry...")
-            
-            # Check and update Poetry lock file
-            if not self._check_and_update_poetry_lock():
-                self.log_warning("Poetry lock file update failed, but continuing installation attempt")
-            
-            try:
-                result = subprocess.run(["poetry", "install", "--no-interaction"], 
-                                      cwd=self.project_dir, check=True)
-                self.log_success("Poetry dependencies installed successfully")
-            except subprocess.CalledProcessError as e:
-                self.log_error(f"Failed to install Poetry dependencies: {e}")
-                all_success = False
-        else:
-            # Install using pip
-            requirements_file = self.project_dir / "requirements.txt"
-            if requirements_file.exists():
-                self.log_info("Installing project dependencies with pip...")
-                try:
-                    result = subprocess.run([sys.executable, "-m", "pip", "install", "-r", str(requirements_file)], 
-                                          cwd=self.project_dir, check=True)
-                    self.log_success("Project dependencies installed successfully")
-                except subprocess.CalledProcessError as e:
-                    self.log_error(f"Failed to install project dependencies: {e}")
-                    all_success = False
-            
-            # Check and install necessary dependencies for management tools
-            self.log_info("Checking management tool dependencies...")
-            
-            for package in required_packages:
-                if not self._check_package_installed(package):
-                    if not self._install_package(package):
-                        all_success = False
-                else:
-                    self.log_success(f"{package} is already installed")
-            
-            # Install optional dependencies
-            for package in optional_packages:
-                if not self._check_package_installed(package):
-                    self._install_package(package, optional=True)
-                else:
-                    self.log_success(f"{package} is already installed")
-        
-        # Show usage examples
-        if all_success:
-            self._show_usage_examples()
-            self.log_success("Dependency installation completed!")
-        else:
-            self.log_warning("Some dependencies failed to install, but core functionality is still available")
-
-    def _check_and_update_poetry_lock(self) -> bool:
-        """Check and update Poetry lock file"""
-        try:
-            # Check if pyproject.toml and poetry.lock files exist
-            pyproject_file = self.project_dir / "pyproject.toml"
-            poetry_lock_file = self.project_dir / "poetry.lock"
-            
-            if not pyproject_file.exists():
-                self.log_warning("pyproject.toml file does not exist, skipping lock file check")
-                return True
-            
-            # First, try the poetry check command to check the project status
-            try:
-                result = subprocess.run(["poetry", "check"], 
-                                      cwd=self.project_dir, 
-                                      capture_output=True, 
-                                      text=True)
-                
-                if result.returncode == 0:
-                    self.log_debug("Poetry project status check passed")
-                    return True
-                else:
-                    self.log_debug(f"Poetry project status check failed: {result.stderr}")
-                    
-            except Exception as e:
-                self.log_debug(f"Poetry project status check exception: {e}")
-            
-            # If poetry.lock does not exist or check fails, try to update lock file
-            if not poetry_lock_file.exists():
-                self.log_info("poetry.lock file does not exist, generating lock file...")
-                lock_command = ["poetry", "lock"]
-            else:
-                self.log_info("Detected outdated lock file, updating lock file...")
-                lock_command = ["poetry", "lock"]
-            
-            # Execute the poetry lock command
-            try:
-                result = subprocess.run(lock_command, 
-                                      cwd=self.project_dir, 
-                                      capture_output=True, 
-                                      text=True,
-                                      timeout=300)  # 5-minute timeout
-                
-                if result.returncode == 0:
-                    self.log_success("Poetry lock file updated successfully")
-                    return True
-                else:
-                    self.log_error(f"Failed to update Poetry lock file: {result.stderr}")
-                    
-                    # If the lock file update fails, try deleting the lock file and rebuilding it
-                    if poetry_lock_file.exists():
-                        try:
-                            self.log_info("Deleting old lock file and regenerating...")
-                            poetry_lock_file.unlink()
-                            
-                            retry_result = subprocess.run(["poetry", "lock"], 
-                                                        cwd=self.project_dir, 
-                                                        capture_output=True, 
-                                                        text=True,
-                                                        timeout=300)
-                            
-                            if retry_result.returncode == 0:
-                                self.log_success("Poetry lock file regenerated successfully")
-                                return True
-                            else:
-                                self.log_error(f"Failed to regenerate Poetry lock file: {retry_result.stderr}")
-                        except Exception as e:
-                            self.log_error(f"Failed to delete old lock file: {e}")
-                    
-                    return False
-                    
-            except subprocess.TimeoutExpired:
-                self.log_error("Poetry lock file update timed out")
-                return False
-            except Exception as e:
-                self.log_error(f"Poetry lock file update exception: {e}")
-                return False
-                
-        except Exception as e:
-            self.log_error(f"Failed to check Poetry lock file: {e}")
-            return False
-
-    @staticmethod
-    def _check_package_installed(package_name: str) -> bool:
-        """Check if package is installed"""
-        try:
-            __import__(package_name)
-            return True
-        except ImportError:
-            return False
-    
-    def _install_package(self, package_name: str, optional: bool = False) -> bool:
-        """Install Python package"""
-        try:
-            self.log_info(f"Installing {package_name}...")
-            result = subprocess.run(
-                [sys.executable, "-m", "pip", "install", package_name],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            self.log_success(f"{package_name} installed successfully")
-            return True
-        except subprocess.CalledProcessError as e:
-            if optional:
-                self.log_warning(f"{package_name} installation failed (optional dependency)")
-                return False
-            else:
-                self.log_error(f"{package_name} installation failed: {e}")
-                return False
-    
-    def _show_usage_examples(self):
-        """Show usage examples"""
-        self.show_section("Usage Examples", self.icons['rocket'])
-        
-        if self.is_windows:
-            self.log_info("Windows Users:")
-            print("  scripts\\manage_py.bat up        # Start all servers")
-            print("  scripts\\manage_py.bat ps        # Check status")
-            print("  scripts\\manage_py.bat down      # Stop all servers")
-            print("  scripts\\manage_py.bat --help    # Show help")
-            print()
-            print("Or use Python directly:")
-            print("  python scripts\\manage.py up")
-        else:
-            self.log_info("Linux/macOS Users:")
-            print("  python3 scripts/manage.py up     # Start all servers")
-            print("  python3 scripts/manage.py ps     # Check status")
-            print("  python3 scripts/manage.py down   # Stop all servers")
-            print("  python3 scripts/manage.py --help # Show help")
-            print()
-            print("You can set an alias for easier use:")
-            print("  alias litemcp='python3 scripts/manage.py'")
-            print("  litemcp up")
-        
-        print()
-        self.log_info("Specific server operations:")
-        print("  python scripts/manage.py up -n example      # Start only example server")
-        print("  python scripts/manage.py down --name school # Stop only school server")
-        print()
-        self.log_info("Verbose mode:")
-        print("  python scripts/manage.py up --verbose       # Show detailed information")
-        print("  python scripts/manage.py install --verbose  # Show detailed information when installing dependencies")
 
     def show_config(self):
         """Show configuration"""
@@ -3306,17 +3093,20 @@ class CrossPlatformManager:
             self.log_error("Python environment does not meet requirements, initialization failed")
             return False
         
-        # 2. Install dependencies
-        self.show_section("Install Dependencies", self.icons['gear'])
-        self.install_dependencies()
+        # 2. Check Poetry environment
+        self.show_section("Check Poetry Environment", self.icons['gear'])
+        if not self.use_poetry:
+            self.log_warning("Poetry not found. Please install Poetry and run 'poetry install' manually.")
+        else:
+            self.log_success("Poetry environment detected. Dependencies should be installed via 'poetry install'.")
         
         # 3. Create necessary directories
         self.show_section("Create Directory Structure", self.icons['shield'])
         self._create_project_directories()
         
-        # 4. Verify installation
-        self.show_section("Verify Installation", self.icons['star'])
-        if self._test_installation():
+        # 4. Verify basic setup
+        self.show_section("Verify Basic Setup", self.icons['star'])
+        if self._verify_basic_setup():
             self.show_section("Initialization Completed", self.icons['rocket'])
             self.log_success("[DONE] LiteMCP Framework initialization successful!")
             self._show_quick_start_guide()
@@ -3340,37 +3130,30 @@ class CrossPlatformManager:
             except Exception as e:
                 self.log_error(f"Failed to create directory {directory}: {e}")
     
-    def _test_installation(self):
-        """Test if installation is successful"""
-        self.log_info("Running health check...")
-        
+    def _verify_basic_setup(self):
+        """Verify basic project setup"""
         try:
-            # Test core functionality
-            config = self.load_config()
-            if not config:
-                self.log_error("Failed to load configuration file")
-                return False
+            # Test directory structure
+            required_dirs = ['runtime', 'runtime/logs', 'runtime/pids']
+            for dir_path in required_dirs:
+                full_path = self.project_dir / dir_path
+                if not full_path.exists():
+                    self.log_error(f"Missing directory: {dir_path}")
+                    return False
+                    
+            self.log_success("Directory structure verified successfully")
             
-            # Test server configuration analysis
-            server_configs = self.get_server_configs()
-            if not server_configs:
-                self.log_warning("No server configuration found, but core functions are normal")
+            # Test configuration file
+            if not self.config_file.exists():
+                self.log_warning("Configuration file not found, but this is not critical")
             else:
-                self.log_success(f"Found {len(server_configs)} server configurations")
-            
-            # Test port allocation
-            try:
-                port = self.get_available_port()
-                self.log_success(f"Port allocation test passed: {port}")
-            except Exception as e:
-                self.log_error(f"Port allocation test failed: {e}")
-                return False
-            
-            self.log_success("Installation verification passed")
+                self.log_success("Configuration file found")
+                
+            self.log_success("Basic setup verification passed")
             return True
             
         except Exception as e:
-            self.log_error(f"Installation verification failed: {e}")
+            self.log_error(f"Basic setup verification failed: {e}")
             return False
     
     def _show_quick_start_guide(self):
@@ -3434,7 +3217,6 @@ class CrossPlatformManager:
         print("  status        View server status")
         print("  api           Start API server only")
         print("  proxy         Start proxy server only")
-        print("  install       Install/update dependencies (automatically handle Poetry lock file)")
         print("  logs          View logs")
         print("  clean         Clean logs and PID files")
         print("  cleanup       Clean up dead processes and zombie ports")
@@ -3454,7 +3236,6 @@ class CrossPlatformManager:
         print("  ps            [G] View server status (same as status)")
         print("  log           [EDIT] View log information (same as logs)")
         print("  check         [HEART] System health check (same as health)")
-        print("  setup         [PKG] Install/update dependencies (same as install, automatically handle Poetry lock file)")
         print("  clear         [CLEAN] Clean temporary files (same as clean)")
         print("  conf          [#]  View configuration information (same as config)")
         print()
@@ -3874,8 +3655,8 @@ def create_argument_parser() -> argparse.ArgumentParser:
     # Main command
     parser.add_argument('command', 
                        choices=['start', 'stop', 'restart', 'status', 'logs', 'clean', 'health', 
-                               'config', 'install', 'up', 'down', 'reboot', 'ps', 'log', 'check', 
-                               'setup', 'clear', 'conf', 'api', 'proxy', 'diagnose', 'cleanup', 'init', 'help', 'unregister', 'validate', 'fix'],
+                               'config', 'up', 'down', 'reboot', 'ps', 'log', 'check', 
+                               'clear', 'conf', 'api', 'proxy', 'diagnose', 'cleanup', 'init', 'help', 'unregister', 'validate', 'fix'],
                        help='Command to execute')
     
     # Optional server name positional parameter (supports bash syntax)
@@ -3942,8 +3723,6 @@ def main():
             manager.health_check()
         elif command == 'config' or command == 'conf':
             manager.show_config()
-        elif command == 'install' or command == 'setup':
-            manager.install_dependencies()
         elif command == 'api':
             manager.start_api_server_standalone()
         elif command == 'proxy':

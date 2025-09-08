@@ -59,8 +59,8 @@ python src/cli.py serve --server example --transport sse --port 8000
 > **注意**：根据自己的系统选择对应的管理脚本或直接使用`manage.py`，以下示例均在Mac OS环境下使用`manage.sh`完成。
 
 ```bash
-# 安装依赖 或 install
-./scripts/manage.sh setup
+# 安装依赖
+poetry install
 
 # 启动所有服务(启用状态的mcp server、mcp api、mcp proxy), 根据项目的[servers.yaml](config/servers.yaml) 中的配置而定自动启动enabled为true的服务
 ./scripts/manage.sh up
@@ -307,7 +307,7 @@ tail -f logs/example.log  # 实时查看特定日志
 
 # 系统检查
 ./scripts/manage.sh check         # 健康检查
-./scripts/manage.sh setup         # 重新安装依赖
+poetry install                   # 重新安装依赖
 
 # 详细调试
 ./scripts/manage.sh up --verbose  # 显示详细启动信息

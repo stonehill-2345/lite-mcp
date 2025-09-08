@@ -35,8 +35,8 @@
 git clone https://github.com/stonehill-2345/lite-mcp
 cd lite-mcp
 
-# 安装依赖（自动检测Poetry或pip）
-./scripts/manage.sh setup
+# 安装依赖
+poetry install
 
 # 验证安装
 ./scripts/manage.sh check
@@ -289,7 +289,6 @@ python src/cli.py list
 | `ps`     | 📊 查看服务器状态      | `./scripts/manage.sh ps` |
 | `log`    | 📝 查看日志信息       | `./scripts/manage.sh log` |
 | `check`  | ❤️ 系统健康检查       | `./scripts/manage.sh check` |
-| `setup`  | 📦 安装/更新依赖      | `./scripts/manage.sh setup` |
 | `clear`  | 🧹 清理临时文件       | `./scripts/manage.sh clear` |
 | `conf`   | ⚙️ 查看配置信息       | `./scripts/manage.sh conf` |
 | `api`    | 🚀 只启动API服务 | `./scripts/manage.sh api` |
@@ -871,7 +870,7 @@ tail -f logs/*.log
 
 ```bash
 # 先安装依赖
-./scripts/manage.sh setup
+poetry install
 
 # 检查系统健康状况
 ./scripts/manage.sh check
@@ -934,7 +933,7 @@ tail -f logs/example.log
 ./scripts/manage.sh clear
 
 # 更新依赖
-./scripts/manage.sh setup
+poetry install
 
 # 重新启动
 ./scripts/manage.sh up
