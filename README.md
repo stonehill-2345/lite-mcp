@@ -59,7 +59,7 @@ python src/cli.py serve --server example --transport sse --port 8000
 
 ```bash
 # Install dependencies
-./scripts/manage.sh setup
+poetry install
 
 # Start all services (enabled mcp server, mcp api, mcp proxy), automatically starts services with enabled=true according to the configuration in [servers.yaml](config/servers.yaml)
 ./scripts/manage.sh up
@@ -306,7 +306,7 @@ tail -f logs/example.log  # View specific logs in real-time
 
 # System Check
 ./scripts/manage.sh check         # Health check
-./scripts/manage.sh setup         # Reinstall dependencies
+poetry install         # Reinstall dependencies
 
 # Detailed Debugging
 ./scripts/manage.sh up --verbose  # Show detailed startup information

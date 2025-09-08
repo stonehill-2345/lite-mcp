@@ -33,8 +33,8 @@ A simple Model Context Protocol (MCP) server framework designed to solve issues 
 git clone https://github.com/stonehill-2345/lite-mcp
 cd lite-mcp
 
-# Install dependencies (auto-detect Poetry or pip)
-./scripts/manage.sh setup
+# Install dependencies
+poetry install
 
 # Verify installation
 ./scripts/manage.sh check
@@ -287,7 +287,6 @@ Expected Output:
 | `ps`     | 📊 View server status     | `./scripts/manage.sh ps` |
 | `log`    | 📝 View log information   | `./scripts/manage.sh log` |
 | `check`  | ❤️ System health check    | `./scripts/manage.sh check` |
-| `setup`  | 📦 Install/update dependencies | `./scripts/manage.sh setup` |
 | `clear`  | 🧹 Clean temporary files  | `./scripts/manage.sh clear` |
 | `conf`   | ⚙️ View configuration info | `./scripts/manage.sh conf` |
 | `api`    | 🚀 Start API service only | `./scripts/manage.sh api` |
@@ -869,7 +868,7 @@ tail -f logs/*.log
 
 ```bash
 # First install dependencies
-./scripts/manage.sh setup
+poetry install
 
 # Check system health
 ./scripts/manage.sh check
@@ -932,7 +931,7 @@ tail -f logs/example.log
 ./scripts/manage.sh clear
 
 # Update dependencies
-./scripts/manage.sh setup
+poetry install
 
 # Restart
 ./scripts/manage.sh up
