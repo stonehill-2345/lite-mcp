@@ -35,6 +35,7 @@ from rich.syntax import Syntax
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from src.core.utils import get_smart_port_for_service, get_local_ip, is_local_ip
 from src.core.registry import ServerRegistry
 
@@ -853,7 +854,11 @@ class CrossPlatformManager:
 
         try:
             with open(self.registry_file, 'r', encoding='utf-8') as f:
-                registry = json.load(f)
+                content = f.read().strip()
+                if not content:
+                    return
+                else:
+                    registry = json.loads(content)
 
             # Find the port record for this server
             for server_id, info in registry.items():
@@ -875,7 +880,11 @@ class CrossPlatformManager:
 
         try:
             with open(self.registry_file, 'r', encoding='utf-8') as f:
-                registry = json.load(f)
+                content = f.read().strip()
+                if not content:
+                    registry = {}
+                else:
+                    registry = json.loads(content)
 
             # Find and remove matching local server records
             keys_to_remove = []
@@ -1620,7 +1629,11 @@ class CrossPlatformManager:
         if self.registry_file.exists():
             try:
                 with open(self.registry_file, 'r', encoding='utf-8') as f:
-                    registry = json.load(f)
+                    content = f.read().strip()
+                    if not content:
+                        registry = {}
+                    else:
+                        registry = json.loads(content)
                 
                 for server_id, info in registry.items():
                     if not self._is_local_server(info):
@@ -2228,16 +2241,66 @@ class CrossPlatformManager:
         
         started_count = 0
         failed_count = 0
-        
-        for i, server_config in enumerate(server_configs, 1):
-            self.log_step(f"Starting server: {server_config.name}", i, len(server_configs))
-            
-            if self.start_mcp_server(server_config):
-                started_count += 1
-            else:
-                failed_count += 1
-            
-            time.sleep(1)  # Avoid port conflicts
+
+        # Start servers in parallel, with a maximum of 5 servers per batch
+        batch_size = 5
+        total_servers = len(server_configs)
+
+        # 将服务器分批
+        for batch_start in range(0, total_servers, batch_size):
+            batch_end = min(batch_start + batch_size, total_servers)
+            batch_servers = server_configs[batch_start:batch_end]
+            batch_num = (batch_start // batch_size) + 1
+            total_batches = (total_servers + batch_size - 1) // batch_size
+
+            self.log_info(f"Starting batch {batch_num}/{total_batches}: {len(batch_servers)} servers")
+            self.log_info(f"Servers in this batch: {', '.join(s.name for s in batch_servers)}")
+
+            # Start servers in the current batch in parallel using a thread pool
+            try:
+                with ThreadPoolExecutor(max_workers=len(batch_servers)) as executor:
+                    # Submit all startup tasks
+                    future_to_server = {
+                        executor.submit(self.start_mcp_server, server_config): server_config
+                        for server_config in batch_servers
+                    }
+
+                    # Wait for all tasks to complete and process results
+                    for future in as_completed(future_to_server):
+                        server_config = future_to_server[future]
+                        try:
+                            if future.result():
+                                started_count += 1
+                                self.log_success(
+                                    f"[{batch_num}/{total_batches}] {server_config.name} started successfully")
+                            else:
+                                failed_count += 1
+                                self.log_error(f"[{batch_num}/{total_batches}] {server_config.name} failed to start")
+                        except Exception as e:
+                            failed_count += 1
+                            self.log_error(
+                                f"[{batch_num}/{total_batches}] {server_config.name} encountered an error during startup: {e}")
+
+                self.log_info(f"Batch {batch_num}/{total_batches} completed")
+
+                # Wait between batches to avoid resource contention
+                if batch_end < total_servers:
+                    self.log_debug("Waiting 3 seconds before starting the next batch...")
+                    time.sleep(3)
+
+            except ImportError:
+                # Fall back to sequential startup if concurrent.futures is unavailable
+                self.log_warning("concurrent.futures is unavailable, falling back to sequential startup")
+                for i, server_config in enumerate(batch_servers):
+                    server_index = batch_start + i + 1
+                    self.log_step(f"Starting server: {server_config.name}", server_index, total_servers)
+
+                    if self.start_mcp_server(server_config):
+                        started_count += 1
+                    else:
+                        failed_count += 1
+
+                    time.sleep(1)  # Avoid port conflicts
         
         # Auto Register MCP Servers to Proxy
         should_register = False
@@ -3122,7 +3185,12 @@ class CrossPlatformManager:
         if self.registry_file.exists():
             try:
                 with open(self.registry_file, 'r', encoding='utf-8') as f:
-                    registry = json.load(f)
+                    content = f.read().strip()
+                    if not content:
+                        self.log_info("  Registry file is empty")
+                        return
+                    else:
+                        registry = json.loads(content)
                 
                 self.log_info(f"  Registry entries: {len(registry)}")
                 for key, info in registry.items():
@@ -3196,7 +3264,12 @@ class CrossPlatformManager:
         if self.registry_file.exists():
             try:
                 with open(self.registry_file, 'r', encoding='utf-8') as f:
-                    registry = json.load(f)
+                    content = f.read().strip()
+                    if not content:
+                        self.log_info("  Registration file is empty and does not need to be cleaned up")
+                        return
+                    else:
+                        registry = json.loads(content)
                 
                 # Only keep remote server records
                 cleaned_registry = {}
@@ -3519,7 +3592,12 @@ class CrossPlatformManager:
         if self.registry_file.exists():
             try:
                 with open(self.registry_file, 'r', encoding='utf-8') as f:
-                    registry = json.load(f)
+                    content = f.read().strip()
+                    if not content:
+                        self.log_info("  Registration file is empty and does not need to be cleaned up")
+                        return
+                    else:
+                        registry = json.loads(content)
                 
                 cleaned_registry = {}
                 for server_id, info in registry.items():
@@ -3586,8 +3664,13 @@ class CrossPlatformManager:
             
             # Load registry
             with open(self.registry_file, 'r', encoding='utf-8') as f:
-                registry = json.load(f)
-            
+                content = f.read().strip()
+                if not content:
+                    self.log_info("  Registration file is empty and does not need to be cleaned up")
+                    return
+                else:
+                    registry = json.loads(content)
+
             cleaned_records = []
             valid_records = {}
             
@@ -3646,8 +3729,13 @@ class CrossPlatformManager:
             
             # Load registry
             with open(self.registry_file, 'r', encoding='utf-8') as f:
-                registry = json.load(f)
-            
+                content = f.read().strip()
+                if not content:
+                    self.log_info("  Registry file is empty")
+                    return True
+                else:
+                    registry = json.loads(content)
+
             issues = []
             
             # Check records in registry
@@ -3699,8 +3787,12 @@ class CrossPlatformManager:
         
         try:
             with open(self.registry_file, 'r', encoding='utf-8') as f:
-                registry = json.load(f)
-            
+                content = f.read().strip()
+                if not content:
+                    registry = {}
+                else:
+                    registry = json.loads(content)
+
             remote_servers = {}
             local_servers_count = 0
             
@@ -3731,8 +3823,12 @@ class CrossPlatformManager:
         
         try:
             with open(self.registry_file, 'r', encoding='utf-8') as f:
-                registry = json.load(f)
-            
+                content = f.read().strip()
+                if not content:
+                    registry = {}
+                else:
+                    registry = json.loads(content)
+
             remote_servers_count = 0
             
             # Load remote services into registry memory via Python script

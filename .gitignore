@@ -156,8 +156,7 @@ Thumbs.db
 # Logs
 logs/
 *.log
-runtime/logs/**/*
-runtime/pids/**/*
+runtime/
 
 # Database
 *.db
