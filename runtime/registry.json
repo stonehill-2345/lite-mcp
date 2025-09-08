@@ -1,24 +1,2 @@
 {
-  "example-http-8130": {
-    "name": "example",
-    "server_type": "example",
-    "transport": "http",
-    "host": "172.17.108.159",
-    "port": 8130,
-    "pid": 29843,
-    "started_at": "2025-09-05 11:49:36",
-    "python_path": "/Users/s016374/Library/Caches/pypoetry/virtualenvs/lite-mcp-2Emj555j-py3.13/bin/python",
-    "server_file": "/Users/s016374/Resources/ai/litemcp/src/tools/base.py"
-  },
-  "school-http-8933": {
-    "name": "school",
-    "server_type": "school",
-    "transport": "http",
-    "host": "172.17.108.159",
-    "port": 8933,
-    "pid": 29869,
-    "started_at": "2025-09-05 11:49:40",
-    "python_path": "/Users/s016374/Library/Caches/pypoetry/virtualenvs/lite-mcp-2Emj555j-py3.13/bin/python",
-    "server_file": "/Users/s016374/Resources/ai/litemcp/src/tools/base.py"
-  }
 }
