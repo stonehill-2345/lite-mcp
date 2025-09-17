@@ -118,6 +118,8 @@ poetry install
 
 3. **多种Python命令**：包装器会自动检测 `python`、`python3` 或 `py` 命令
 
+   注意：请以管理员权限启动 PowerShell 或 CMD 来执行脚本命令。
+
 #### macOS/Linux 用户注意事项
 1. **执行权限**：确保脚本有执行权限
    ```bash
@@ -410,5 +412,4 @@ LiteMCP Framework 集成了以下开源项目和库，为 MCP 服务器开发提
 
 ### 许可证
 本项目采用 MIT 许可证 - 详情请参阅 [LICENSE](../LICENSE) 文件。
-
 

@@ -117,6 +117,8 @@ poetry install
 
 3. **Multiple Python Commands**: The wrapper will automatically detect `python`, `python3` or `py` commands
 
+   Note: Launch PowerShell or CMD with administrator privileges to execute script commands.
+
 #### macOS/Linux User Notes
 1. **Execution Permission**: Ensure the script has execution permission
    ```bash
@@ -409,5 +411,4 @@ Example: `feat: add new MCP server for file operations`
 
 ### License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 
