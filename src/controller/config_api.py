@@ -210,7 +210,7 @@ def generate_proxy_config(client_type: str, proxy_host: str = "localhost", proxy
         Proxy configuration data
     """
 
-    mcp_server_host = "https://test-mcp.2345.cn"
+    mcp_server_host = "http://127.0.0.1:1888"
 
     result = {
         "client_type": client_type,

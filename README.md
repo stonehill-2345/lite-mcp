@@ -95,10 +95,10 @@ poetry install
 ./scripts/manage.sh restart --name <server name>
 
 # Register mcp server to specified mcp proxy and provide external services through the proxy
-./scripts/manage.sh start --name example --proxy-url https://test-mcp.2345.cn  # Start specified service and register to proxy
+./scripts/manage.sh start --name example --proxy-url <proxy_ip:1888>  # Start specified service and register to proxy
 
 # Unregister all services
-./scripts/manage.sh unregister --proxy-url https://test-mcp.2345.cn
+./scripts/manage.sh unregister --proxy-url <proxy_ip:1888>
 ```
 > Note: Registering to a remote proxy service is mainly suitable for Jenkins-like multi-slave, one-master mode. When registering to a remote proxy, if the remote proxy also starts this service, it will overwrite the registered service information.
 !![RemoteServer.png](docs/RemoteServer.png)

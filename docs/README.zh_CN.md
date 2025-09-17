@@ -96,10 +96,10 @@ poetry install
 ./scripts/manage.sh restart --name <server name>
 
 # 将mcp server注册到指定mcp proxy由指定的mcp proxy统一提供对外服务
-./scripts/manage.sh start --name example --proxy-url https://test-mcp.2345.cn  # 启动指定服务并注册到指定代理
+./scripts/manage.sh start --name example --proxy-url <proxy_ip:1888>  # 启动指定服务并注册到指定代理
 
 # 注销所有服务
-./scripts/manage.sh unregister --proxy-url https://test-mcp.2345.cn
+./scripts/manage.sh unregister --proxy-url <proxy_ip:1888>
 ```
 > 需要注意：注册到远程代理服务主要适用于类似Jenkins的 多salve、一个master的模式，注册到远程代理时，如果远程代理也启动这个服务则会覆盖代注册服务信息。
 !![RemoteServer.png](RemoteServer.png)
