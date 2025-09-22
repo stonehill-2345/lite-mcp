@@ -1,8 +1,8 @@
-# TestMCP 日志系统使用指南
+# LiteMCP 日志系统使用指南
 
 ## 🎯 概览
 
-TestMCP 采用统一的日志管理系统，提供结构化、可配置的日志记录功能。系统支持分级日志、文件轮转、彩色输出等特性。
+LiteMCP 采用统一的日志管理系统，提供结构化、可配置的日志记录功能。系统支持分级日志、文件轮转、彩色输出等特性。
 
 ## 📋 特性
 
@@ -12,7 +12,7 @@ TestMCP 采用统一的日志管理系统，提供结构化、可配置的日志
 - ✅ **自动轮转**：日志文件达到 10MB 自动轮转，保留 5 个历史文件
 - ✅ **模块化记录器**：每个模块可使用独立的日志记录器
 - ✅ **性能监控**：支持函数执行时间监控
-- ✅ **环境变量配置**：通过 `TESTMCP_LOG_LEVEL` 控制日志级别
+- ✅ **环境变量配置**：通过 `LiteMCP_LOG_LEVEL` 控制日志级别
 
 ## 🚀 基础使用
 
@@ -137,8 +137,8 @@ logger = init_logging(
 
 ```
 runtime/logs/
-├── testmcp.log                    # 主日志文件
-├── testmcp.cli.log               # CLI 日志
+├── litemcp.log                    # 主日志文件
+├── litemcp.cli.log               # CLI 日志
 ├── registry.log                  # 注册表日志
 ├── api_server.log                # API 服务器日志
 ├── example_server.log            # Example 服务器日志
@@ -150,14 +150,14 @@ runtime/logs/
 
 ### 控制台格式（简洁）
 ```
-14:33:46 [INFO] testmcp.cli: TestMCP CLI 启动，日志级别: DEBUG
-14:33:46 [DEBUG] testmcp.cli: 列出可用的服务器
+14:33:46 [INFO] litemcp.cli: LiteMCP CLI 启动，日志级别: DEBUG
+14:33:46 [DEBUG] litemcp.cli: 列出可用的服务器
 ```
 
 ### 文件格式（详细）
 ```
-2025-06-13 14:33:46 [INFO] testmcp.cli:322 - main(): TestMCP CLI 启动，日志级别: DEBUG
-2025-06-13 14:33:46 [DEBUG] testmcp.cli:38 - list_servers(): 列出可用的服务器
+2025-06-13 14:33:46 [INFO] litemcp.cli:322 - main(): LiteMCP CLI 启动，日志级别: DEBUG
+2025-06-13 14:33:46 [DEBUG] litemcp.cli:38 - list_servers(): 列出可用的服务器
 ```
 
 ## 🎯 日志级别说明
@@ -176,7 +176,7 @@ runtime/logs/
 
 ```bash
 # 设置全局日志级别
-export TESTMCP_LOG_LEVEL=DEBUG
+export LiteMCP_LOG_LEVEL=DEBUG
 
 # 在具体命令中使用
 python src/cli.py --log-level DEBUG list
@@ -196,12 +196,12 @@ python src/cli.py api --log-level INFO --host 0.0.0.0 --port 9000
 - **保留文件数量**：最多保留 5 个历史文件
 - **轮转规则**：
   ```
-  testmcp.log          # 当前日志文件
-  testmcp.log.1        # 第一个轮转文件
-  testmcp.log.2        # 第二个轮转文件
-  testmcp.log.3        # 第三个轮转文件
-  testmcp.log.4        # 第四个轮转文件
-  testmcp.log.5        # 第五个轮转文件（最老，会被删除）
+  litemcp.log          # 当前日志文件
+  litemcp.log.1        # 第一个轮转文件
+  litemcp.log.2        # 第二个轮转文件
+  litemcp.log.3        # 第三个轮转文件
+  litemcp.log.4        # 第四个轮转文件
+  litemcp.log.5        # 第五个轮转文件（最老，会被删除）
   ```
 
 ## 🎨 彩色输出
@@ -220,7 +220,7 @@ python src/cli.py api --log-level INFO --host 0.0.0.0 --port 9000
 
 ```python
 # 每个模块创建自己的记录器
-logger = get_logger(f"testmcp.{__name__}")
+logger = get_logger(f"litemcp.{__name__}")
 ```
 
 ### 2. 错误处理中的日志
@@ -279,7 +279,7 @@ tail -f runtime/logs/*.log
 tail -f runtime/logs/example_server.log
 
 # 查看主日志
-tail -f runtime/logs/testmcp.log
+tail -f runtime/logs/litemcp.log
 ```
 
 ### 2. 搜索日志
@@ -289,10 +289,10 @@ tail -f runtime/logs/testmcp.log
 grep "ERROR" runtime/logs/*.log
 
 # 搜索特定时间的日志
-grep "2025-06-13 14:" runtime/logs/testmcp.log
+grep "2025-06-13 14:" runtime/logs/litemcp.log
 
 # 搜索特定模块的日志
-grep "testmcp.cli" runtime/logs/*.log
+grep "litemcp.cli" runtime/logs/*.log
 ```
 
 ### 3. 临时调试
@@ -317,7 +317,7 @@ with TemporaryLogLevel("DEBUG"):
 ### get_logger()
 
 ```python
-def get_logger(name: str = "testmcp", 
+def get_logger(name: str = "litemcp", 
                log_file: Optional[str] = None,
                console_output: bool = True,
                file_output: bool = True) -> logging.Logger

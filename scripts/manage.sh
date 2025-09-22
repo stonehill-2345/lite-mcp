@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# TestMCP Framework management script wrapper
+# LiteMCP Framework management script wrapper
 # Simplifies calling the Python management tool, supporting all original features
 # 
 # Usage examples:

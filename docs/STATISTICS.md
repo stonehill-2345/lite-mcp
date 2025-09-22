@@ -1,8 +1,8 @@
-# TestMCP Statistics System Design Document
+# LiteMCP Statistics System Design Document
 
 ## Overview
 
-The TestMCP Statistics System provides comprehensive author information and tool statistics functionality, supporting decorator marking, statistics data collection, and report generation.
+The LiteMCP Statistics System provides comprehensive author information and tool statistics functionality, supporting decorator marking, statistics data collection, and report generation.
 **Use Cases**:
 - Standard process during server initialization
 - Collect complete server and tool information
@@ -40,7 +40,7 @@ The TestMCP Statistics System provides comprehensive author information and tool
 from src.core.statistics import statistics_manager, AuthorInfo
 
 # Create author information
-author = AuthorInfo(name="John Doe", email="johndoe@example.com", department="Testing", project="TestMCP")
+author = AuthorInfo(name="John Doe", email="johndoe@example.com", department="Testing", project="LiteMCP")
 
 # Method 1: Step-by-step operations (recommended for batch operations)
 statistics_manager.register_server("MyServer", "MyServerClass", "my.module", "My Server", author)
@@ -56,16 +56,16 @@ statistics_manager.register_server_and_save("MyServer2", "MyServerClass2", "my.m
 ```python
 from src.core.statistics import mcp_author, collect_server_statistics
 
-@mcp_author("John Doe", "johndoe@example.com", department="Testing", project="TestMCP")
+@mcp_author("John Doe", "johndoe@example.com", department="Testing", project="LiteMCP")
 class MyMCPServer(BaseMCPServer):
     def _register_tools(self):
         @self.mcp.tool()
-        @mcp_author("Jane Smith", "janesmith@example.com", department="Development", project="TestMCP")
+        @mcp_author("Jane Smith", "janesmith@example.com", department="Development", project="LiteMCP")
         def my_tool(param: str) -> str:
             return f"Processed: {param}"
         
         @self.mcp.tool()
-        @mcp_author("Bob Wilson", department="Testing", project="TestMCP")
+        @mcp_author("Bob Wilson", department="Testing", project="LiteMCP")
         def another_tool(param: int) -> int:
             return param * 2
 
@@ -104,13 +104,13 @@ server = MyMCPServer()
 @mcp_author("John Doe", department="Testing")
 
 # Specify single project
-@mcp_author("John Doe", project=["TestMCP"])
+@mcp_author("John Doe", project=["LiteMCP"])
 
 # Specify multiple projects
-@mcp_author("John Doe", project=["TestMCP", "ProjectA"])
+@mcp_author("John Doe", project=["LiteMCP", "ProjectA"])
 
 # Complete information
-@mcp_author("John Doe", "johndoe@example.com", department="Testing", project=["TestMCP", "ProjectA"])
+@mcp_author("John Doe", "johndoe@example.com", department="Testing", project=["LiteMCP", "ProjectA"])
 ```
 
 ### Author Information Inheritance Rules
@@ -121,7 +121,7 @@ server = MyMCPServer()
 
 **Inheritance Example**:
 ```python
-@mcp_author("John Doe", department="Testing", project="TestMCP")
+@mcp_author("John Doe", department="Testing", project="LiteMCP")
 class MyServer(BaseMCPServer):
     def _register_tools(self):
         @self.mcp.tool()
@@ -169,7 +169,7 @@ curl -X 'POST' \
   'http://localhost:9000/api/v1/statistics/servers/batch' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
-  -d '["TestMCP-Example", "TestMCP-School", "NonExistentServer"]'
+  -d '["LiteMCP-Example", "LiteMCP-School", "NonExistentServer"]'
 ```
 
 #### Batch Query Tools
