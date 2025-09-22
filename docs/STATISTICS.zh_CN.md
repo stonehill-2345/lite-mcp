@@ -1,8 +1,8 @@
-# TestMCP 统计系统设计文档
+# LiteMCP 统计系统设计文档
 
 ## 概述
 
-TestMCP 统计系统提供了完整的作者信息和工具统计功能，支持装饰器标记、统计数据收集和报表生成。
+LiteMCP 统计系统提供了完整的作者信息和工具统计功能，支持装饰器标记、统计数据收集和报表生成。
 **使用场景**：
 - 服务器初始化时的标准流程
 - 收集完整的服务器和工具信息
@@ -40,7 +40,7 @@ TestMCP 统计系统提供了完整的作者信息和工具统计功能，支持
 from src.core.statistics import statistics_manager, AuthorInfo
 
 # 创建作者信息
-author = AuthorInfo(name="张三", email="zhangsan@example.com", department="测试部", project="TestMCP")
+author = AuthorInfo(name="张三", email="zhangsan@example.com", department="测试部", project="LiteMCP")
 
 # 方式1：分步操作（推荐用于批量操作）
 statistics_manager.register_server("MyServer", "MyServerClass", "my.module", "我的服务器", author)
@@ -56,16 +56,16 @@ statistics_manager.register_server_and_save("MyServer2", "MyServerClass2", "my.m
 ```python
 from src.core.statistics import mcp_author, collect_server_statistics
 
-@mcp_author("张三", "zhangsan@example.com", department="测试部", project="TestMCP")
+@mcp_author("张三", "zhangsan@example.com", department="测试部", project="LiteMCP")
 class MyMCPServer(BaseMCPServer):
     def _register_tools(self):
         @self.mcp.tool()
-        @mcp_author("李四", "lisi@example.com", department="开发部", project="TestMCP")
+        @mcp_author("李四", "lisi@example.com", department="开发部", project="LiteMCP")
         def my_tool(param: str) -> str:
             return f"处理: {param}"
         
         @self.mcp.tool()
-        @mcp_author("王五", department="测试部", project="TestMCP")
+        @mcp_author("王五", department="测试部", project="LiteMCP")
         def another_tool(param: int) -> int:
             return param * 2
 
@@ -104,13 +104,13 @@ server = MyMCPServer()
 @mcp_author("张三", department="测试部")
 
 # 指定单个项目
-@mcp_author("张三", project=["TestMCP"])
+@mcp_author("张三", project=["LiteMCP"])
 
 # 指定多个项目
-@mcp_author("张三", project=["TestMCP", "ProjectA"])
+@mcp_author("张三", project=["LiteMCP", "ProjectA"])
 
 # 完整信息
-@mcp_author("张三", "zhangsan@example.com", department="测试部", project=["TestMCP", "ProjectA"])
+@mcp_author("张三", "zhangsan@example.com", department="测试部", project=["LiteMCP", "ProjectA"])
 ```
 
 ### 作者信息继承规则
@@ -121,7 +121,7 @@ server = MyMCPServer()
 
 **继承示例**：
 ```python
-@mcp_author("张三", department="测试部", project="TestMCP")
+@mcp_author("张三", department="测试部", project="LiteMCP")
 class MyServer(BaseMCPServer):
     def _register_tools(self):
         @self.mcp.tool()
@@ -169,7 +169,7 @@ curl -X 'POST' \
   'http://localhost:9000/api/v1/statistics/servers/batch' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
-  -d '["TestMCP-Example", "TestMCP-School", "NonExistentServer"]'
+  -d '["LiteMCP-Example", "LiteMCP-School", "NonExistentServer"]'
 ```
 
 #### 批量查询工具

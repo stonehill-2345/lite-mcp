@@ -1,4 +1,4 @@
-# TestMCP Server Startup Configuration
+# LiteMCP Server Startup Configuration
 # This config file defines all MCP servers and API servers to be started when executing scripts/manage.sh
 
 
@@ -21,6 +21,15 @@ mcp_servers:
     port: null                       # Auto-assigned port
     auto_restart: true
     description: "School management server"
+
+  fastbot:
+    enabled: true                    # Whether to enable Fastbot server
+    server_type: "fastbot"           # Server type (corresponds to AVAILABLE_SERVERS key)
+    transport: "http"                 # Transport protocol: stdio/http/sse
+    host: null                       # Automatically gets current machine IP, externally accessible
+    port: null                       # Port number, null means auto-assigned
+    auto_restart: true               # Whether to auto-restart
+    description: "Fastbot Android stability testing server"
 
 
 # Additional custom servers
@@ -48,7 +57,7 @@ proxy_server:
 # API Server Configuration
 api_server:
   enabled: true                      # Whether to enable API server
-  host: null                         # Automatically gets current machine IP, externally accessible
+  host: "0.0.0.0"                    # Automatically gets current machine IP, externally accessible
   port: 9000                         # API server port
   auto_restart: true                 # Whether to auto-restart
   description: "Configuration API server"

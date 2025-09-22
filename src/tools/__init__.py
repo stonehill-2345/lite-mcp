@@ -1,4 +1,3 @@
-
 """
 LiteMCP Toolkit - Server Registry Center
 
@@ -17,6 +16,11 @@ AVAILABLE_SERVERS = {
         "module": "src.tools.demo.school_server",
         "class": "SchoolMCPServer"
     },
+    "fastbot": {
+        "description": "Fastbot Android stability testing server, supporting device management, APK installation, stability testing, and log analysis features",
+        "module": "src.tools.monkey_testing.fastbot_server",
+        "class": "FastbotMCPServer"
+    }
 }
 
 # Export all server classes (optional, for direct import)

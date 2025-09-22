@@ -1,5 +1,5 @@
 """
-TestMCP Statistics API Controller
+LiteMCP Statistics API Controller
 
 Provides statistics data query interfaces, supporting queries for server, tool, author, and other statistical information.
 """
@@ -14,7 +14,7 @@ from src.core.logger import get_logger
 router = APIRouter(prefix="/api/v1/statistics", tags=["Statistics"])
 
 # Create logger
-logger = get_logger("testmcp.api.statistics")
+logger = get_logger("litemcp.api.statistics")
 
 
 @router.get("/", summary="Get Statistics Overview", description="Get overall statistics information overview")

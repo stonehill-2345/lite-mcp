@@ -1,5 +1,5 @@
 """
-TestMCP Statistics Module - Statistics Report System
+LiteMCP Statistics Module - Statistics Report System
 
 Provides decorator system for collecting author information and statistics data, supporting statistics report generation.
 """
@@ -91,7 +91,7 @@ class StatisticsManager(LoggerMixin):
         self.servers: Dict[str, ServerInfo] = {}
         self.tools: Dict[str, ToolInfo] = {}
         # Initialize logger
-        self._logger = get_logger("testmcp.statistics", log_file="statistics.log")
+        self._logger = get_logger("litemcp.statistics", log_file="statistics.log")
         self.load_statistics()
     
     def load_statistics(self):

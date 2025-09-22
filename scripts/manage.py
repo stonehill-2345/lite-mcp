@@ -1296,6 +1296,7 @@ class CrossPlatformManager:
             time.sleep(5)
             max_attempts = 6
             attempt = 1
+            host = self._get_local_ip_via_utils()
 
             while attempt <= max_attempts:
                 try:

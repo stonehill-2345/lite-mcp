@@ -13,28 +13,105 @@ LiteMCP Framework fully supports Windows, macOS, and Linux operating systems, en
 - Simple and extensible architecture, easily handling dynamically growing server counts
 - Built-in intelligent proxy server that integrates distributed nodes into a unified access point, eliminating the complexity of managing multiple servers
 
-Create README.md add project introduction
 ## 🚀 Quick Start
 
-- **Python 3.12+** - For multiple Python versions, consider using tools like [pyenv](https://github.com/pyenv/pyenv)
-- **pip** or **[Poetry](https://python-poetry.org/)** (recommended)
-- **Git** (for version control)
+### 🛠️ Environment Requirements
 
-### Install Dependencies
+#### Backend Environment
+- **Python 3.12+**，For multiple Python versions, consider using tools like [pyenv](https://www.wolai.com/weib/eWeE2iM2sS7M7p1iAzs4DU) for management
+- **pip**, **[Poetry](https://www.wolai.com/weib/tgynoVVUu6jzqXGntyT1Zi)** or **[uv](https://docs.astral.sh/uv/)**
+- **Git**(for version control)
+
+| Platform | Python Installation Method | Node.js Installation Method |
+|------|---------------|----------------|
+| **Windows** | [Python Official Website](https://python.org/downloads/) or [Microsoft Store](https://apps.microsoft.com/detail/9nrwmjp3717k) | [Node.js Official Website](https://nodejs.org/) |
+| **macOS** | [Homebrew](https://brew.sh/): `brew install python@3.12` | `brew install node` |
+| **Linux** | System Package Manager: `sudo apt install python3.12` (Ubuntu/Debian) | `sudo apt install nodejs npm` |
+
+### Starting the Server
+
+#### Method 1: Using Poetry
 
 ```bash
 # Clone the project
-git clone https://github.com/stonehill-2345/lite-mcp
+git clone https://github.com/stonehill-2345/lite-mcp.git
 cd lite-mcp
 
-# Install dependencies
+# Install Python dependencies
 poetry install
 
-# Activate virtual env
-poetry env activate 
-# Poetry version < 2.0
+# Activate the virtual environment
 poetry shell
+
+# Start the backend service
+./scripts/manage.sh up
 ```
+
+#### Method 2: Using uv
+
+[uv](https://docs.astral.sh/uv/) is an extremely fast Python package manager, 10-100 times faster than pip and Poetry.
+
+```bash
+# Clone the project
+git clone https://github.com/stonehill-2345/lite-mcp.git
+cd lite-mcp
+
+# Install dependencies using uv (automatically creates a virtual environment)
+uv sync
+
+# Activate the virtual environment
+source .venv/bin/activate  # Linux/macOS
+# or .venv\Scripts\activate  # Windows
+
+# Start the backend service
+./scripts/manage.sh up
+```
+
+#### Method 3: Using pip
+
+```bash
+# Clone the project
+git clone https://github.com/stonehill-2345/lite-mcp.git
+cd lite-mcp
+
+# Create a virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+# or .venv\Scripts\activate  # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start the backend service
+./scripts/manage.sh up
+```
+
+#### ⚡ Quick Verification
+
+```bash
+# Check service status
+./scripts/manage.sh ps
+
+# Test API endpoint
+curl http://localhost:9000/health
+
+# View available tools
+curl http://localhost:9000/config
+```
+
+### View Log Information
+> If needed, you can find each server's log information in the runtime/logs folder at the project root path.
+
+```bash
+cd runtime/logs
+```
+
+After successful startup, you can access through the following addresses:
+
+- **Backend API**: http://localhost:9000
+- **API Documentation**: http://localhost:9000/docs
+- **Proxy Service**: http://localhost:1888
+
 
 ### Management Script Instructions
 | OS | Recommended Script	 | Python Version |
@@ -95,10 +172,10 @@ poetry install
 ./scripts/manage.sh restart --name <server name>
 
 # Register mcp server to specified mcp proxy and provide external services through the proxy
-./scripts/manage.sh start --name example --proxy-url https://test-mcp.2345.cn  # Start specified service and register to proxy
+./scripts/manage.sh start --name example --proxy-url <proxy_ip:1888>  # Start specified service and register to proxy
 
 # Unregister all services
-./scripts/manage.sh unregister --proxy-url https://test-mcp.2345.cn
+./scripts/manage.sh unregister --proxy-url <proxy_ip:1888>
 ```
 > Note: Registering to a remote proxy service is mainly suitable for Jenkins-like multi-slave, one-master mode. When registering to a remote proxy, if the remote proxy also starts this service, it will overwrite the registered service information.
 !![RemoteServer.png](docs/RemoteServer.png)
@@ -234,7 +311,24 @@ api_server:
 ```
 
 ## 🏗️ Project Structure
-- [Project Structure](docs/USAGE.md#project-structure)
+```
+litemcp/
+├── src/                  # Backend source code
+│   ├── core/             # Core modules
+│   ├── tools/            # MCP tool servers
+│   ├── controller/       # API controllers
+│   └── cli.py            # Command line entry
+├── config/               # Configuration files
+│   └── servers.yaml      # Server configuration
+├── scripts/              # Management scripts
+│   ├── manage.sh         # Linux/macOS management script
+│   ├── manage.bat        # Windows management script
+│   └── manage.py         # Cross-platform Python management script
+├── pyproject.toml        # Python project configuration (supports Poetry and uv)
+├── requirements.txt      # pip dependencies file
+└── README.md             # Project description
+```
+- [Project Structure](docs/USAGE.md#-project-structure)
 
 ## 🔧 Development Guide
 
