@@ -1,5 +1,5 @@
 @echo off
-REM TestMCP Framework management script wrapper (Windows)
+REM LiteMCP Framework management script wrapper (Windows)
 REM Simplifies calling the Python management tool, supporting all original features
 REM
 REM Usage examples:

@@ -15,27 +15,103 @@ LiteMCP Framework 全面支持 Windows、macOS 和 Linux 三大操作系统，�
 
 ## 🚀 快速开始
 
-### 🛠️ 开发环境准备
+### 🛠️ 环境要求
 
-- **Python 3.12+**，多版本Python可以考虑使用[pyenv](https://github.com/pyenv/pyenv)等工具进行管理
-- **pip** 或 **[Poetry](https://python-poetry.org/)**（推荐）
+#### 后端环境
+- **Python 3.12+**，多版本Python可以考虑使用[pyenv](https://www.wolai.com/weib/eWeE2iM2sS7M7p1iAzs4DU)等工具进行管理
+- **pip**、**[Poetry](https://www.wolai.com/weib/tgynoVVUu6jzqXGntyT1Zi)** 或 **[uv](https://docs.astral.sh/uv/)**
 - **Git**（用于版本控制）
 
-### 安装依赖
+| 平台 | Python安装方式 | Node.js安装方式 |
+|------|---------------|----------------|
+| **Windows** | [Python官网](https://python.org/downloads/) 或 [Microsoft Store](https://apps.microsoft.com/detail/9nrwmjp3717k) | [Node.js官网](https://nodejs.org/) |
+| **macOS** | [Homebrew](https://brew.sh/): `brew install python@3.12` | `brew install node` |
+| **Linux** | 系统包管理器: `sudo apt install python3.12` (Ubuntu/Debian) | `sudo apt install nodejs npm` |
+
+### 启动服务端
+
+#### 方式一：使用 Poetry
 
 ```bash
 # 克隆项目
-git clone https://github.com/stonehill-2345/lite-mcp
+git clone https://github.com/stonehill-2345/lite-mcp.git
 cd lite-mcp
 
-# 安装依赖
+# 安装Python依赖
 poetry install
 
 # 激活虚拟环境
-poetry env activate 
-# 当Poetry版本低于2.0
 poetry shell
+
+# 启动后端服务
+./scripts/manage.sh up
 ```
+
+#### 方式二：使用 uv
+
+[uv](https://docs.astral.sh/uv/) 是一个极快的Python包管理器，比pip和Poetry快10-100倍。
+
+```bash
+# 克隆项目
+git clone https://github.com/stonehill-2345/lite-mcp.git
+cd lite-mcp
+
+# 使用uv安装依赖（自动创建虚拟环境）
+uv sync
+
+# 激活虚拟环境
+source .venv/bin/activate  # Linux/macOS
+# 或 .venv\Scripts\activate  # Windows
+
+# 启动后端服务
+./scripts/manage.sh up
+```
+
+#### 方式三：使用 pip
+
+```bash
+# 克隆项目
+git clone https://github.com/stonehill-2345/lite-mcp.git
+cd lite-mcp
+
+# 创建虚拟环境
+python -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+# 或 .venv\Scripts\activate  # Windows
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 启动后端服务
+./scripts/manage.sh up
+```
+
+#### ⚡ 快速验证
+
+```bash
+# 检查服务状态
+./scripts/manage.sh ps
+
+# 测试API接口
+curl http://localhost:9000/health
+
+# 查看可用工具
+curl http://localhost:9000/config
+```
+
+### 查看日志信息
+> 如有需要可在项目根路径的runtime/logs文件夹中找到各server的日志信息。
+
+```bash
+cd runtime/logs
+```
+
+启动成功后，可以通过以下地址访问：
+
+- **后端API**: http://localhost:9000
+- **API文档**: http://localhost:9000/docs
+- **代理服务**: http://localhost:1888
+
 
 ### 管理脚本说明
 | 操作系统        | 推荐管理脚本                | Python要求 |
@@ -235,6 +311,24 @@ api_server:
 ```
 
 ## 🏗️ 项目结构
+
+```
+litemcp/
+├── src/                  # 后端源码
+│   ├── core/             # 核心功能模块
+│   ├── tools/            # MCP工具服务器
+│   ├── controller/       # API控制器
+│   └── cli.py            # 命令行入口
+├── config/               # 配置文件
+│   └── servers.yaml      # 服务器配置
+├── scripts/              # 管理脚本
+│   ├── manage.sh         # Linux/macOS管理脚本
+│   ├── manage.bat        # Windows管理脚本
+│   └── manage.py         # 跨平台Python管理脚本
+├── pyproject.toml        # Python项目配置（支持Poetry和uv）
+├── requirements.txt      # pip依赖文件
+└── README.md             # 项目说明
+```
 - [项目结构](USAGE.zh_CN.md#-项目结构)
 
 ## 🔧 开发指南
