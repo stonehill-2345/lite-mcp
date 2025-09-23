@@ -20,7 +20,12 @@ AVAILABLE_SERVERS = {
         "description": "Fastbot Android stability testing server, supporting device management, APK installation, stability testing, and log analysis features",
         "module": "src.tools.monkey_testing.fastbot_server",
         "class": "FastbotMCPServer"
-    }
+    },
+    "android": {
+        "description": "Android device interaction MCP server providing mobile device control tools",
+        "module": "src.tools.androidTools.android_server",
+        "class": "AndroidMCPServer"
+    },
 }
 
 # Export all server classes (optional, for direct import)
