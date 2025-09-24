@@ -3,7 +3,7 @@ name = "lite-mcp"
 version = "2.0.0"
 description = "A simple Model Context Protocol (MCP) server framework"
 authors = [
-    "weibingcs <weibingcs@2345.com>"
+    "hlw_tech <hlw_tech@2345.com>"
 ]
 readme = "README.md"
 packages = [

@@ -156,7 +156,9 @@ Thumbs.db
 # Logs
 logs/
 *.log
-runtime/
+runtime/logs/**/*
+runtime/pids/**/*
+runtime/*
 
 # Database
 *.db
@@ -182,4 +184,50 @@ test_output/
 test_results/
 
 # Docker
-docker-compose.override.yml 
+docker-compose.override.yml
+
+# Node.js / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Frontend build outputs
+web/dist/
+web/build/
+web/.vite/
+web/.nuxt/
+web/.next/
+web/out/
+
+# Frontend environment files
+web/.env
+web/.env.local
+web/.env.development.local
+web/.env.test.local
+web/.env.production.local
+
+# Frontend cache and temp
+web/.cache/
+web/.parcel-cache/
+web/.vite-cache/
+web/.eslintcache
+web/.stylelintcache
+
+# Frontend OS generated files
+web/.DS_Store
+web/Thumbs.db
+
+# Frontend IDE
+web/.vscode/
+web/.idea/
+
+# Frontend package manager locks (optional, uncomment if needed)
+# web/package-lock.json
+# web/yarn.lock
+# web/pnpm-lock.yaml
+
+# uv lock file
+uv.lock

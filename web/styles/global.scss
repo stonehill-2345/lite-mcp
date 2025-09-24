@@ -1,0 +1,112 @@
+// Global style file
+// Ensure Element Plus component styles display correctly
+
+// Basic reset (without affecting Element Plus components)
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+// Element Plus form component style enhancement
+// Now that Vue template syntax errors are fixed, use gentle style enhancements
+.el-form {
+  .el-form-item {
+    margin-bottom: 18px;
+    
+    .el-form-item__label {
+      color: var(--el-text-color-regular);
+      font-weight: 500;
+    }
+    
+    .el-form-item__content {
+      // Ensure input boxes have appropriate width
+      .el-input, .el-select, .el-textarea {
+        width: 100%;
+      }
+      
+      // Subtle style enhancements without overriding Element Plus default styles
+      .el-input__wrapper {
+        transition: all 0.2s ease;
+      }
+      
+      .el-select__wrapper {
+        transition: all 0.2s ease;
+      }
+      
+      .el-textarea__inner {
+        transition: all 0.2s ease;
+      }
+    }
+  }
+}
+
+// Scrollbar style
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--el-fill-color-lighter);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--el-fill-color-dark);
+  border-radius: 3px;
+  
+  &:hover {
+    background: var(--el-fill-color-darker);
+  }
+}
+
+// Ensure form styles within dialogs are normal
+.el-dialog {
+  .el-dialog__body {
+    .el-form {
+      .el-form-item {
+        .el-form-item__content {
+          .el-input, .el-select, .el-textarea {
+            width: 100%;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Global el-dialog title centering style
+.el-dialog {
+  position: absolute;
+  top: -100px;
+
+  .el-dialog__header {
+    .el-dialog__title {
+      // Use flex layout to center the title, but do not affect content
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
+  
+  // Ensure dialog content is not affected by title centering
+  .el-dialog__body {
+    text-align: left; // Explicitly set content to left alignment
+    
+    // Reset elements that may be affected
+    * {
+      text-align: inherit;
+    }
+  }
+}

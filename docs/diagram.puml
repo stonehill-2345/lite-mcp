@@ -1,5 +1,5 @@
 @startuml
-title TestMCP Framework Architecture
+title LiteMCP Framework Architecture
 
 
 skinparam backgroundColor #F8F9FA
