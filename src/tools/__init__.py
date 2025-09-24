@@ -26,6 +26,11 @@ AVAILABLE_SERVERS = {
         "module": "src.tools.android_tools.android_server",
         "class": "AndroidMCPServer"
     },
+    "check": {
+        "description": "Common detection tools",
+        "module": "src.tools.common_tools.check_server",
+        "class": "CheckMCPServer"
+    },
 }
 
 # Export all server classes (optional, for direct import)
