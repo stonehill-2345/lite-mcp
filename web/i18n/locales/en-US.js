@@ -221,11 +221,7 @@ export default {
         configHint: {
             title: 'Configuration Hint',
             incomplete: 'Current model configuration is incomplete, please configure first:',
-            steps: [
-                'Click the "Chat Settings" button in the top right',
-                'Set API key and other parameters in "Model Configuration"',
-                'Save settings and start chatting'
-            ]
+            steps: 'Click the "Chat Settings" button in the top right\nSet API key and other parameters in "Model Configuration"\nSave settings and start chatting'
         },
 
         // File upload

@@ -37,7 +37,7 @@
                 <template #default>
                   <p>{{ $t('chat.configHint.incomplete') }}</p>
                   <ol>
-                    <li v-for="(step, index) in $t('chat.configHint.steps')" :key="index">{{ step }}</li>
+                    <li v-for="(step, index) in configHintSteps" :key="index">{{ step }}</li>
                   </ol>
                 </template>
               </el-alert>
@@ -203,6 +203,17 @@ const { copyToClipboard } = useClipboard()
 
 // Internationalization
 const { t } = useI18n()
+
+// Computed properties for i18n arrays
+const configHintSteps = computed(() => {
+  try {
+    const stepsString = t('chat.configHint.steps')
+    return stepsString ? stepsString.split('\n').filter(step => step.trim()) : []
+  } catch (error) {
+    console.warn('Failed to get configHint.steps:', error)
+    return []
+  }
+})
 
 // Reactive data
 const messages = ref([])
