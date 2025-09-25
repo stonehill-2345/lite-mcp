@@ -111,13 +111,9 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   InfoFilled,
-  Document,
   Setting,
-  User,
-  OfficeBuilding,
-  Message
 } from '@element-plus/icons-vue'
-import { queryToolByName } from '@/api/mcp/mcpApi'
+import { getToolDetail } from '@/api/mcp/mcpApi'
 
 // Multi-language support
 const { t } = useI18n()
@@ -174,9 +170,7 @@ const fetchToolDetail = async (toolName) => {
     loading.value = true
     error.value = ''
 
-    // Use local LiteMCP API address
-    const apiUrl = '/api/v1/config'
-    const response = await queryToolByName(apiUrl, toolName)
+    const response = await getToolDetail(toolName)
 
     if (response?.success && response?.data) {
       detailData.value = response.data
