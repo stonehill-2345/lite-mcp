@@ -1,7 +1,7 @@
 """
 Android Mobile Device Interaction (uiautomator2)
 
-Encapsulates mobile interaction logic and state views within the androidTools directory.
+Encapsulates mobile interaction logic and state views within the android_tools directory.
 Provides:
 - Mobile: device connection, screenshots, MobileState generation
 - MobileState: contains TreeState and optional PNG byte screenshot
@@ -14,7 +14,7 @@ import uiautomator2 as u2
 from PIL import Image as PILImage
 
 # Tree-related types imported from uiTree package
-from src.tools.androidTools.uiTree import Tree, TreeState
+from src.tools.android_tools.uiTree import Tree, TreeState
 
 
 @dataclass

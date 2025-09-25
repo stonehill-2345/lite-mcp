@@ -26,10 +26,10 @@ adb devices
 1) Run the server directly:
 ```bash
 # Physical device (default)
-python src/tools/androidTools/android_server.py
+python src/tools/android_tools/android_server.py
 
 # Use emulator
-python src/tools/androidTools/android_server.py --emulator
+python src/tools/android_tools/android_server.py --emulator
 ```
 
 2) Via project scripts:
@@ -111,7 +111,7 @@ maybe_image = result[1]            # Image: FastMCP Image object (PNG)
 
 ### Directory Structure (excerpt)
 ```
-src/tools/androidTools/
+src/tools/android_tools/
 ├── __init__.py
 ├── android_server.py      # AndroidMCPServer; registers all tools
 ├── mobile.py              # Mobile / MobileState; screenshot & state aggregation

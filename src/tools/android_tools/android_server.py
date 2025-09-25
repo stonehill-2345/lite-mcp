@@ -11,7 +11,7 @@ Provides tools for direct Android device interaction:
 import argparse
 import time
 from src.tools.base import BaseMCPServer
-from src.tools.androidTools.mobile import Mobile, MobileState
+from src.tools.android_tools.mobile import Mobile, MobileState
 from src.core.statistics import mcp_author
 # FastMCP 2.x recommends using Image from utilities.types to avoid deprecation warnings
 from fastmcp.utilities.types import Image

@@ -23,7 +23,7 @@ AVAILABLE_SERVERS = {
     },
     "android": {
         "description": "Android device interaction MCP server providing mobile device control tools",
-        "module": "src.tools.androidTools.android_server",
+        "module": "src.tools.android_tools.android_server",
         "class": "AndroidMCPServer"
     },
 }

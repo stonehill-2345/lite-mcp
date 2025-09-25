@@ -1,6 +1,6 @@
-from src.tools.androidTools.uiTree.views import TreeState, ElementNode, CenterCord, BoundingBox
-from src.tools.androidTools.uiTree.utils import extract_cordinates, get_center_cordinates
-from src.tools.androidTools.uiTree.config import INTERACTIVE_CLASSES
+from src.tools.android_tools.uiTree.views import TreeState, ElementNode, CenterCord, BoundingBox
+from src.tools.android_tools.uiTree.utils import extract_cordinates, get_center_cordinates
+from src.tools.android_tools.uiTree.config import INTERACTIVE_CLASSES
 from PIL import Image, ImageFont, ImageDraw
 from xml.etree.ElementTree import Element
 from xml.etree import ElementTree
@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import random
 
 if TYPE_CHECKING:
-    from src.tools.androidTools.mobile import Mobile
+    from src.tools.android_tools.mobile import Mobile
 
 
 class Tree:
