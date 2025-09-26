@@ -86,9 +86,6 @@ ipython_config.py
 # pipenv
 Pipfile.lock
 
-# poetry
-poetry.lock
-
 # pdm
 .pdm.toml
 
@@ -228,6 +225,3 @@ web/.idea/
 # web/package-lock.json
 # web/yarn.lock
 # web/pnpm-lock.yaml
-
-# uv lock file
-uv.lock
