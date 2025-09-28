@@ -18,9 +18,13 @@ LiteMCP Framework fully supports Windows, macOS, and Linux operating systems, en
 ### 🛠️ Environment Requirements
 
 #### Backend Environment
-- **Python 3.12+**，For multiple Python versions, consider using tools like [pyenv](https://www.wolai.com/weib/eWeE2iM2sS7M7p1iAzs4DU) for management
-- **pip**, **[Poetry](https://www.wolai.com/weib/tgynoVVUu6jzqXGntyT1Zi)** or **[uv](https://docs.astral.sh/uv/)**
+- **Python 3.12+**，For multiple Python versions, consider using tools like [pyenv](https://github.com/pyenv/pyenv) for management
+- **pip 21.2+**, **[Poetry](https://python-poetry.org/)** or **[uv](https://docs.astral.sh/uv/)**
 - **Git**(for version control)
+
+#### Frontend Environment (Optional, for Web Interface)
+- **Node.js 16+**(Recommended 18+)
+- **npm** or **yarn**
 
 | Platform | Python Installation Method | Node.js Installation Method |
 |------|---------------|----------------|
@@ -79,8 +83,8 @@ python -m venv .venv
 source .venv/bin/activate  # Linux/macOS
 # or .venv\Scripts\activate  # Windows
 
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (pip 21.2+ supports direct installation from pyproject.toml)
+pip install -e .
 
 # Start the backend service
 ./scripts/manage.sh up
@@ -106,11 +110,25 @@ curl http://localhost:9000/config
 cd runtime/logs
 ```
 
+### Start Web Assistant
+> Start if needed, ignore if not needed
+
+```bash
+# Start Web frontend (optional, new terminal window)
+cd web
+npm install
+npm run dev
+```
+
 After successful startup, you can access through the following addresses:
 
 - **Backend API**: http://localhost:9000
 - **API Documentation**: http://localhost:9000/docs
+- **Web Interface**: http://localhost:2345 (if frontend is started)
 - **Proxy Service**: http://localhost:1888
+
+![UseTheAssistant.png](web/docs/en-img/UseTheAssistant.png)
+Detailed [Usage Documentation Reference](web/README.md#getting-started)
 
 
 ### Management Script Instructions
@@ -318,14 +336,21 @@ litemcp/
 │   ├── tools/            # MCP tool servers
 │   ├── controller/       # API controllers
 │   └── cli.py            # Command line entry
+├── web/                  # Frontend Web interface
+│   ├── components/       # Vue components
+│   ├── services/         # API services
+│   ├── utils/            # Utility functions
+│   ├── api/              # API wrappers
+│   ├── package.json      # Frontend dependencies configuration
+│   ├── vite.config.js    # Vite build configuration
+│   └── main.js           # Frontend entry
 ├── config/               # Configuration files
 │   └── servers.yaml      # Server configuration
 ├── scripts/              # Management scripts
 │   ├── manage.sh         # Linux/macOS management script
 │   ├── manage.bat        # Windows management script
 │   └── manage.py         # Cross-platform Python management script
-├── pyproject.toml        # Python project configuration (supports Poetry and uv)
-├── requirements.txt      # pip dependencies file
+├── pyproject.toml        # Python Project Configuration (Supports Poetry, uv, and pip)
 └── README.md             # Project description
 ```
 - [Project Structure](docs/USAGE.md#-project-structure)

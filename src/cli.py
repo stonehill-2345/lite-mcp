@@ -13,16 +13,15 @@ import argparse
 import sys
 import requests
 import socket
+from pathlib import Path
+
+project_root = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_root))
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from src.core.utils import get_local_ip, get_project_root
-
-# Add project root directory to Python path
-project_root = get_project_root()
-sys.path.insert(0, str(project_root))
-
+from src.core.utils import get_local_ip
 from src.tools import AVAILABLE_SERVERS
 from src.core.logger import init_logging, get_logger
 from src.core.proxy_server import get_proxy_server

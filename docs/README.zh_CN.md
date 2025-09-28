@@ -18,9 +18,13 @@ LiteMCP Framework 全面支持 Windows、macOS 和 Linux 三大操作系统，�
 ### 🛠️ 环境要求
 
 #### 后端环境
-- **Python 3.12+**，多版本Python可以考虑使用[pyenv](https://www.wolai.com/weib/eWeE2iM2sS7M7p1iAzs4DU)等工具进行管理
-- **pip**、**[Poetry](https://www.wolai.com/weib/tgynoVVUu6jzqXGntyT1Zi)** 或 **[uv](https://docs.astral.sh/uv/)**
+- **Python 3.12+**，多版本Python可以考虑使用[pyenv](https://github.com/pyenv/pyenv)等工具进行管理
+- **pip 21.2+**、**[Poetry](https://python-poetry.org/)** 或 **[uv](https://docs.astral.sh/uv/)**
 - **Git**（用于版本控制）
+
+#### 前端环境（可选，用于Web界面）
+- **Node.js 16+**（推荐18+）
+- **npm** 或 **yarn**
 
 | 平台 | Python安装方式 | Node.js安装方式 |
 |------|---------------|----------------|
@@ -79,8 +83,8 @@ python -m venv .venv
 source .venv/bin/activate  # Linux/macOS
 # 或 .venv\Scripts\activate  # Windows
 
-# 安装依赖
-pip install -r requirements.txt
+# 安装依赖（pip 21.2+ 支持直接从 pyproject.toml 安装）
+pip install -e .
 
 # 启动后端服务
 ./scripts/manage.sh up
@@ -106,11 +110,24 @@ curl http://localhost:9000/config
 cd runtime/logs
 ```
 
+### 启动Web助手
+> 需要则启动不需要可忽略
+
+```bash
+# 启动Web前端（可选，新终端窗口）
+cd web
+npm install
+npm run dev
+```
+
 启动成功后，可以通过以下地址访问：
 
 - **后端API**: http://localhost:9000
 - **API文档**: http://localhost:9000/docs
+- **Web界面**: http://localhost:2345（如果启动了前端）
 - **代理服务**: http://localhost:1888
+![UseTheAssistant.png](../web/docs/cn-img/UseTheAssistant.png)
+详细[使用文档参考](../web/docs/README.zh_CN.md#开始使用)
 
 
 ### 管理脚本说明
@@ -319,14 +336,21 @@ litemcp/
 │   ├── tools/            # MCP工具服务器
 │   ├── controller/       # API控制器
 │   └── cli.py            # 命令行入口
+├── web/                  # 前端Web界面
+│   ├── components/       # Vue组件
+│   ├── services/         # API服务
+│   ├── utils/            # 工具函数
+│   ├── api/              # API封装
+│   ├── package.json      # 前端依赖配置
+│   ├── vite.config.js    # Vite构建配置
+│   └── main.js           # 前端入口
 ├── config/               # 配置文件
 │   └── servers.yaml      # 服务器配置
 ├── scripts/              # 管理脚本
 │   ├── manage.sh         # Linux/macOS管理脚本
 │   ├── manage.bat        # Windows管理脚本
 │   └── manage.py         # 跨平台Python管理脚本
-├── pyproject.toml        # Python项目配置（支持Poetry和uv）
-├── requirements.txt      # pip依赖文件
+├── pyproject.toml        # Python项目配置（支持Poetry、uv和pip）
 └── README.md             # 项目说明
 ```
 - [项目结构](USAGE.zh_CN.md#-项目结构)

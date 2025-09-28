@@ -2074,38 +2074,43 @@ class CrossPlatformManager:
         except Exception as e:
             self.log_debug(f"Windows process group termination failed: {e}")
             return False
-    
+
     def _cleanup_all_litemcp_processes(self, force: bool = False) -> int:
-        """Clean up all LiteMCP-related processes"""
+        """Clean up all LiteMCP related processes"""
         cleaned_count = 0
-        
+
         try:
-            # Find all possible LiteMCP-related processes
+            # Find all possible LiteMCP related processes
             litemcp_keywords = ['litemcp', 'cli.py', 'manage.py', 'src/cli.py']
-            
+
             for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
                 try:
                     cmdline = ' '.join(proc.info['cmdline'] or [])
-                    
-                    # Check if it's a LiteMCP-related process
+
+                    # exclude processes containing /web/ path
+                    if '/web/' in cmdline:
+                        continue
+
+                    # Check if it is a LiteMCP related process
                     is_litemcp = any(keyword in cmdline.lower() for keyword in litemcp_keywords)
-                    
+
                     # Additional check: whether it contains our specific commands
                     if not is_litemcp:
-                        is_litemcp = any(cmd in cmdline for cmd in ['serve', 'proxy', 'api']) and 'src/cli.py' in cmdline
-                    
+                        is_litemcp = any(
+                            cmd in cmdline for cmd in ['serve', 'proxy', 'api']) and 'src/cli.py' in cmdline
+
                     if is_litemcp:
                         # Exclude current management script process
                         current_pid = os.getpid()
                         if proc.info['pid'] == current_pid:
                             continue
-                            
+
                         # Exclude all management script processes
                         if 'manage.py' in cmdline:
                             continue
-                            
-                        self.log_debug(f"Cleaning LiteMCP process: PID {proc.info['pid']}")
-                        
+
+                        self.log_debug(f"Cleaning up LiteMCP process: PID {proc.info['pid']}")
+
                         if force:
                             proc.kill()
                         else:
@@ -2114,17 +2119,17 @@ class CrossPlatformManager:
                                 proc.wait(timeout=3)
                             except psutil.TimeoutExpired:
                                 proc.kill()
-                        
+
                         cleaned_count += 1
-                        
+
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
                 except Exception as e:
                     self.log_debug(f"Failed to clean up process: {e}")
-                    
+
         except Exception as e:
             self.log_debug(f"Failed to scan processes: {e}")
-        
+
         return cleaned_count
     
     def _cleanup_pid_file(self, name: str):
