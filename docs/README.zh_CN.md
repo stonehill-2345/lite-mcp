@@ -19,7 +19,7 @@ LiteMCP Framework 全面支持 Windows、macOS 和 Linux 三大操作系统，�
 
 #### 后端环境
 - **Python 3.12+**，多版本Python可以考虑使用[pyenv](https://github.com/pyenv/pyenv)等工具进行管理
-- **pip**、**[Poetry](https://python-poetry.org/)** 或 **[uv](https://docs.astral.sh/uv/)**
+- **pip 21.2+**、**[Poetry](https://python-poetry.org/)** 或 **[uv](https://docs.astral.sh/uv/)**
 - **Git**（用于版本控制）
 
 #### 前端环境（可选，用于Web界面）
@@ -83,8 +83,8 @@ python -m venv .venv
 source .venv/bin/activate  # Linux/macOS
 # 或 .venv\Scripts\activate  # Windows
 
-# 安装依赖
-pip install -r requirements.txt
+# 安装依赖（pip 21.2+ 支持直接从 pyproject.toml 安装）
+pip install -e .
 
 # 启动后端服务
 ./scripts/manage.sh up
@@ -350,8 +350,7 @@ litemcp/
 │   ├── manage.sh         # Linux/macOS管理脚本
 │   ├── manage.bat        # Windows管理脚本
 │   └── manage.py         # 跨平台Python管理脚本
-├── pyproject.toml        # Python项目配置（支持Poetry和uv）
-├── requirements.txt      # pip依赖文件
+├── pyproject.toml        # Python项目配置（支持Poetry、uv和pip）
 └── README.md             # 项目说明
 ```
 - [项目结构](USAGE.zh_CN.md#-项目结构)

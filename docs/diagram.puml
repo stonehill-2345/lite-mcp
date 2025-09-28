@@ -9,11 +9,9 @@ package DependencyManagement {
     [Poetry] #FF9FF3
     [pyproject.toml] #FF9FF3
     [poetry.lock] #FF9FF3
-    [requirements.txt] #FF9FF3
-    
+
     Poetry --> pyproject.toml
     Poetry --> poetry.lock
-    Poetry --> requirements.txt
 }
 
 

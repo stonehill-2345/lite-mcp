@@ -19,7 +19,7 @@ LiteMCP Framework fully supports Windows, macOS, and Linux operating systems, en
 
 #### Backend Environment
 - **Python 3.12+**，For multiple Python versions, consider using tools like [pyenv](https://github.com/pyenv/pyenv) for management
-- **pip**, **[Poetry](https://python-poetry.org/)** or **[uv](https://docs.astral.sh/uv/)**
+- **pip 21.2+**, **[Poetry](https://python-poetry.org/)** or **[uv](https://docs.astral.sh/uv/)**
 - **Git**(for version control)
 
 #### Frontend Environment (Optional, for Web Interface)
@@ -83,8 +83,8 @@ python -m venv .venv
 source .venv/bin/activate  # Linux/macOS
 # or .venv\Scripts\activate  # Windows
 
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (pip 21.2+ supports direct installation from pyproject.toml)
+pip install -e .
 
 # Start the backend service
 ./scripts/manage.sh up
@@ -350,8 +350,7 @@ litemcp/
 │   ├── manage.sh         # Linux/macOS management script
 │   ├── manage.bat        # Windows management script
 │   └── manage.py         # Cross-platform Python management script
-├── pyproject.toml        # Python project configuration (supports Poetry and uv)
-├── requirements.txt      # pip dependencies file
+├── pyproject.toml        # Python Project Configuration (Supports Poetry, uv, and pip)
 └── README.md             # Project description
 ```
 - [Project Structure](docs/USAGE.md#-project-structure)
