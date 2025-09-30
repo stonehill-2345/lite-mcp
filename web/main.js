@@ -24,7 +24,7 @@ const app = createApp(LiteMCPIndex)
 // Configure Element Plus language pack based on current language
 const getElementLocale = () => {
   const currentLocale = getCurrentLocale()
-  return currentLocale === 'en-US' ? enUS : zhCN
+  return currentLocale === 'zh-CN' ? zhCN : enUS
 }
 
 // Use Element Plus (dynamic language pack configuration)

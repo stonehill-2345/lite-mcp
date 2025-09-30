@@ -256,13 +256,13 @@ const saveSettings = () => {
     emit('react-toggle', localReactEnabled.value)
 
     showSettingsDialog.value = false
-    ElMessage.success('Settings saved and stored locally')
-    
+    ElMessage.success(t('chat.messages.settingsSavedLocally'))
+
     // Reset flag
     setTimeout(() => {
       isUpdatingFromProps = false
     }, 100)
-    
+
   } catch (error) {
     isUpdatingFromProps = false
     ElMessage.error(t('chat.settings.settingsSaveFailed') + ': ' + error.message)
@@ -272,10 +272,10 @@ const saveSettings = () => {
 const resetToDefaults = async () => {
   try {
     await ElMessageBox.confirm(
-      'Are you sure you want to reset to default settings? This will clear all custom configurations.',
-      'Reset Settings',
+      t('chat.dialogs.resetSettingsConfirm'),
+      t('chat.dialogs.resetSettingsTitle'),
       {
-        confirmButtonText: 'Confirm',
+        confirmButtonText: t('chat.dialogs.confirmReset'),
         cancelButtonText: t('common.cancel'),
         type: 'warning'
       }
@@ -286,9 +286,9 @@ const resetToDefaults = async () => {
     if (success) {
       // Reload configuration
       loadSavedConfigs()
-      ElMessage.success('Reset to default settings')
+      ElMessage.success(t('chat.messages.resetToDefaults'))
     } else {
-      ElMessage.error('Failed to reset configuration')
+      ElMessage.error(t('chat.messages.resetConfigFailed'))
     }
   } catch (error) {
     // User cancelled
@@ -298,26 +298,26 @@ const resetToDefaults = async () => {
 const validateConfigs = () => {
   // Validate model configuration
   if (!localModelConfig.value.provider) {
-    ElMessage.error('Please select a model provider')
+    ElMessage.error(t('chat.messages.selectModelProvider'))
     activeTab.value = 'model'
     return false
   }
 
   // All providers need model ID, including Azure OpenAI
   if (!localModelConfig.value.modelId) {
-    ElMessage.error('Please select or enter a model')
+    ElMessage.error(t('chat.messages.selectOrEnterModel'))
     activeTab.value = 'model'
     return false
   }
 
   if (localModelConfig.value.temperature < 0 || localModelConfig.value.temperature > 2) {
-    ElMessage.error('Temperature value must be between 0-2')
+    ElMessage.error(t('chat.messages.temperatureRange'))
     activeTab.value = 'model'
     return false
   }
 
   if (localModelConfig.value.maxTokens < 1 || localModelConfig.value.maxTokens > 200000) {
-    ElMessage.error('Max tokens must be between 1-200000')
+    ElMessage.error(t('chat.messages.maxTokensRange'))
     activeTab.value = 'model'
     return false
   }
@@ -333,17 +333,17 @@ const validateConfigs = () => {
   // Special validation for Azure OpenAI
   if (localModelConfig.value.provider === 'azure') {
     if (!localModelConfig.value.azureEndpoint && !localModelConfig.value.baseUrl) {
-      ElMessage.error('Please configure Azure endpoint or base URL')
+      ElMessage.error(t('chat.messages.configureAzureEndpoint'))
       activeTab.value = 'model'
       return false
     }
     if (localModelConfig.value.azureEndpoint && !localModelConfig.value.deploymentName) {
-      ElMessage.error('Please configure deployment name')
+      ElMessage.error(t('chat.messages.configureDeploymentName'))
       activeTab.value = 'model'
       return false
     }
     if (!localModelConfig.value.apiVersion) {
-      ElMessage.error('Please configure API version')
+      ElMessage.error(t('chat.messages.configureApiVersion'))
       activeTab.value = 'model'
       return false
     }
@@ -352,7 +352,7 @@ const validateConfigs = () => {
   // Validate providers that need Base URL (now excluding azure)
   const needsBaseUrl = ['custom'].includes(localModelConfig.value.provider)
   if (needsBaseUrl && !localModelConfig.value.baseUrl) {
-    ElMessage.error('Please enter base URL')
+    ElMessage.error(t('chat.messages.enterBaseUrl'))
     activeTab.value = 'model'
     return false
   }
@@ -364,7 +364,7 @@ const exportConfig = () => {
   try {
     // Use ConfigStorage to export all configurations
     const allConfigs = ConfigManager.exportAll()
-    
+
     const blob = new Blob([JSON.stringify(allConfigs, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -373,29 +373,29 @@ const exportConfig = () => {
     a.click()
     URL.revokeObjectURL(url)
 
-    ElMessage.success('Configuration exported')
+    ElMessage.success(t('chat.messages.configExported'))
   } catch (error) {
-    ElMessage.error('Failed to export configuration: ' + error.message)
+    ElMessage.error(t('chat.messages.exportConfigFailed') + ': ' + error.message)
   }
 }
 
 const importConfig = (file) => {
   if (!file) return
-  
+
   const reader = new FileReader()
   reader.onload = (e) => {
     try {
       const configData = JSON.parse(e.target.result)
-      
+
       // Use ConfigStorage to import configuration
       ConfigManager.importAll(configData)
-      
+
       // Reload configuration to interface
       loadSavedConfigs()
 
-      ElMessage.success('Configuration imported and applied')
+      ElMessage.success(t('chat.messages.configImportedApplied'))
     } catch (error) {
-      ElMessage.error('Failed to import configuration: ' + error.message)
+      ElMessage.error(t('chat.messages.importConfigFailed') + ': ' + error.message)
     }
   }
   reader.readAsText(file)
@@ -409,7 +409,7 @@ const loadSavedConfigs = () => {
     const savedPromptsConfig = ConfigManager.loadPromptsConfig()
     const savedReActConfig = ConfigManager.loadReActConfig()
     const savedAdvancedConfig = ConfigManager.loadAdvancedConfig()
-    
+
     // Directly use ConfigManager returned configurations, no longer manually merge default values
     // ConfigManager.loadModelConfig() already correctly handles merging of default values and saved values, including null values
     localModelConfig.value = { ...savedModelConfig }
@@ -419,7 +419,7 @@ const loadSavedConfigs = () => {
     localAdvancedConfig.value = { ...savedAdvancedConfig }
   } catch (error) {
     logger.error('Failed to load configuration:', error)
-    ElMessage.warning('Failed to load saved configuration, using default configuration')
+    ElMessage.warning(t('chat.messages.loadSavedConfigFailed'))
   }
 }
 

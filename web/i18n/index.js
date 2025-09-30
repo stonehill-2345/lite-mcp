@@ -2,25 +2,25 @@ import { createI18n } from 'vue-i18n'
 import zhCN from './locales/zh-CN.js'
 import enUS from './locales/en-US.js'
 
-// Get user's language setting from localStorage, default to Chinese
+// Get user's language setting from localStorage, default to English
 const getStoredLocale = () => {
   try {
     const advancedConfig = localStorage.getItem('mcp_advanced_config')
     if (advancedConfig) {
       const config = JSON.parse(advancedConfig)
-      return config.locale || 'zh-CN'
+      return config.locale || 'en-US'
     }
   } catch (error) {
     console.warn('Failed to get stored language setting:', error)
   }
-  return 'zh-CN'
+  return 'en-US'
 }
 
 // Create i18n instance
 export const i18n = createI18n({
   legacy: false,
   locale: getStoredLocale(),
-  fallbackLocale: 'zh-CN',
+  fallbackLocale: 'en-US',
   messages: {
     'zh-CN': zhCN,
     'en-US': enUS

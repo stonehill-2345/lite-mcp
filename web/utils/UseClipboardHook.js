@@ -1,9 +1,11 @@
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 
 /**
  * Clipboard operation hooks
  */
 export function useClipboard() {
+  const { t } = useI18n()
   /**
    * Copy text to clipboard
    * @param {string} text - Text to copy
@@ -58,7 +60,7 @@ export function useClipboard() {
         throw new Error('This browser does not support reading from clipboard')
       }
     } catch (error) {
-      ElMessage.error('Failed to read from clipboard')
+      ElMessage.error(t('chat.messages.readClipboardFailed'))
       console.error('Failed to read from clipboard:', error)
       throw error
     }

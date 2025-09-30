@@ -46,7 +46,9 @@ export default {
         export: 'Export',
         characters: 'Characters',
         moreSettings: 'More Settings',
-        stop: 'Stop'
+        stop: 'Stop',
+        create: 'Create',
+        update: 'Update'
     },
 
     // Page titles
@@ -172,7 +174,43 @@ export default {
             reasoningDetails: 'Reasoning Details',
             detailedTrace: 'Detailed Reasoning Trace',
             mainAnswer: 'Main Answer Content',
-            reasoningStats: 'Reasoning Statistics'
+            reasoningStats: 'Reasoning Statistics',
+
+            // Common messages
+
+            // Success messages
+            jsonFormatCompleted: 'JSON formatting completed',
+            exampleConfigLoaded: 'Example configuration loaded',
+            toolListRefreshCompleted: 'Tool list refresh completed',
+            settingsSavedLocally: 'Settings saved and stored locally',
+            resetToDefaults: 'Reset to default settings',
+            configExported: 'Configuration exported',
+            configImportedApplied: 'Configuration imported and applied',
+
+            // Error messages
+            jsonFormatError: 'JSON format error, unable to format',
+            loadExampleFailed: 'Failed to load example configuration',
+            refreshToolsFailed: 'Failed to refresh tools',
+            resetConfigFailed: 'Failed to reset configuration',
+            selectModelProvider: 'Please select a model provider',
+            selectOrEnterModel: 'Please select or enter a model',
+            temperatureRange: 'Temperature value must be between 0-2',
+            maxTokensRange: 'Max tokens must be between 1-200000',
+            configureAzureEndpoint: 'Please configure Azure endpoint or base URL',
+            configureDeploymentName: 'Please configure deployment name',
+            configureApiVersion: 'Please configure API version',
+            enterBaseUrl: 'Please enter base URL',
+            exportConfigFailed: 'Failed to export configuration',
+            importConfigFailed: 'Failed to import configuration',
+            loadSavedConfigFailed: 'Failed to load saved configuration, using default configuration',
+            readClipboardFailed: 'Failed to read from clipboard',
+            autoConnectFailed: 'Error occurred during auto-connect',
+
+            // Warning messages
+            noConnectedServers: 'No connected servers',
+            connectServerFirst: 'Please connect to server first',
+            noAvailableTools: 'This server has no available tools',
+            autoConnectCompletedAllFailed: 'Auto-connect completed, but all server connections failed'
         },
 
         // Chat input box
@@ -247,7 +285,17 @@ export default {
             copySuccess: 'Message copied to clipboard',
             copyFailed: 'Copy failed, please try again',
             stopProcessing: 'Stopping AI processing, completing soon...',
-            stopSuccess: 'Processing stopped'
+            stopSuccess: 'Processing stopped',
+
+            // Common confirmation dialogs
+            loadExampleConfirm: 'Loading example configuration will overwrite all current configuration content. This operation cannot be undone.',
+            loadExampleTitle: 'Confirm Load Example',
+            resetSettingsConfirm: 'Are you sure you want to reset to default settings? This will clear all custom configurations.',
+            resetSettingsTitle: 'Reset Settings',
+
+            // Common button text
+            confirmLoad: 'Confirm Load',
+            confirmReset: 'Confirm Reset'
         },
 
         // Configuration validation
@@ -901,6 +949,14 @@ export default {
             tools: 'tools',
             collapseTools: 'Collapse Tools',
             expandTools: 'Expand Tools',
+            deleteServer: 'Delete Server',
+            cannotDeleteEnabledServer: 'Cannot delete enabled server. Please disable it first.',
+            deleteServerTitle: 'Confirm Delete Server',
+            deleteServerConfirm: 'Are you sure you want to delete server "{name}"? This action cannot be undone.',
+            serverDeleted: 'Server "{name}" has been deleted',
+            deleteServerFailed: 'Failed to delete server: {error}',
+            configParseError: 'Configuration parsing failed',
+            serverNotFound: 'Server "{name}" not found in configuration',
             availableToolsList: 'Available Tools List ({count} items)',
             enableAll: 'Enable All',
             disableAll: 'Disable All',
@@ -937,7 +993,11 @@ export default {
                 sseServers: 'SSE Servers',
                 streamableServers: 'Streamable HTTP',
                 totalTools: 'Total Tools',
-                suggestion: 'Recommended ≤40'
+                suggestion: 'Recommended ≤40',
+                externalMcp: 'External MCP Services',
+                running: 'Running',
+                clickToManage: 'Click to Manage',
+                externalMcpTooltip: 'Manage third-party MCP service configurations like GitHub, GitLab, time services, etc.'
             },
 
             // Server types
@@ -1066,7 +1126,189 @@ export default {
                 notFound: 'Tool details not found',
                 fetchFailed: 'Failed to fetch tool details: {error}',
                 networkError: 'Network error'
+            },
+            toolsDetail: {
+                projectToolsTitle: 'Tools List for Project "{name}"',
+                authorToolsTitle: 'Tools List for Author "{name}"',
+                totalTools: 'Total Tools',
+                project: 'Project',
+                author: 'Author',
+                toolName: 'Tool Name',
+                description: 'Description',
+                serverName: 'Server Name',
+                authorName: 'Author Name',
+                department: 'Department',
+                parameters: 'Parameters',
+                returnType: 'Return Type',
+                noParameters: 'No Parameters',
+                noTools: 'No Tools',
+                fetchError: 'Failed to fetch tools list'
             }
+        },
+
+        // External MCP Management
+        externalManager: {
+            title: 'External MCP Service Management',
+            manage: 'Manage External MCP',
+
+            // Instance management
+            createInstance: 'Create Instance',
+            editInstance: 'Edit Instance',
+            deleteInstance: 'Delete Instance',
+            instanceName: 'Instance Name',
+            templateName: 'Template Name',
+            description: 'Description',
+            command: 'Command',
+            environment: 'Environment Variables',
+            enabled: 'Enabled',
+            disabled: 'Disabled',
+            status: 'Status',
+
+            // Search and filter
+            searchPlaceholder: 'Search instance name, command or description...',
+            allStatus: 'All Status',
+
+            // Batch operations
+            batchOperations: 'Batch Operations',
+            selectedCount: 'Selected {count} instances',
+            batchEnable: 'Batch Enable',
+            batchDisable: 'Batch Disable',
+            batchDelete: 'Batch Delete',
+
+            // Statistics
+            totalInstances: 'Total Instances',
+            enabledInstances: 'Enabled Instances',
+            disabledInstances: 'Disabled Instances',
+            refreshPending: 'Changes pending, config will refresh when dialog closes',
+
+            // Environment variables
+            envVars: 'Environment Variables',
+
+            // Operation confirmations
+            deleteConfirm: 'Are you sure to delete instance "{name}"? This action cannot be undone.',
+            cannotDeleteEnabled: 'Cannot delete enabled instance "{name}". Please disable it first.',
+            cannotDeleteEnabledBatch: 'Cannot delete {count} enabled instances: {names}. Please disable them first.',
+            cannotDeleteEnabledTooltip: 'Enabled instances cannot be deleted. Please disable first.',
+            batchDeleteConfirm: 'Are you sure to delete {count} selected instances? This action cannot be undone.',
+
+            // Operation messages
+            loadDataError: 'Failed to load data',
+            refreshSuccess: 'Data refreshed successfully',
+            deleteSuccess: 'Instance deleted successfully',
+            deleteError: 'Failed to delete instance',
+            enableSuccess: 'Instance "{name}" enabled successfully',
+            enableError: 'Failed to enable instance',
+            disableSuccess: 'Instance "{name}" disabled successfully',
+            disableError: 'Failed to disable instance',
+            createSuccess: 'Instance created successfully',
+            createError: 'Failed to create instance',
+            updateSuccess: 'Instance updated successfully',
+            updateError: 'Failed to update instance',
+
+            // Batch operation messages
+            noDisabledSelected: 'No disabled instances selected',
+            noEnabledSelected: 'No enabled instances selected',
+            noInstancesSelected: 'No instances selected',
+            batchEnableSuccess: 'Batch enable completed successfully, {count} instances',
+            batchEnableError: 'Batch enable failed',
+            batchDisableSuccess: 'Batch disable completed successfully, {count} instances',
+            batchDisableError: 'Batch disable failed',
+            batchDeleteSuccess: 'Batch delete completed successfully, {count} instances',
+            batchDeleteError: 'Batch delete failed'
+        },
+
+        // Instance Form
+        instanceForm: {
+            createTitle: 'Create MCP Instance',
+            editTitle: 'Edit MCP Instance',
+            basicInfo: 'Basic Information',
+            environment: 'Environment Variables',
+            preview: 'Preview',
+
+            // Basic information
+            templateName: 'Template Name',
+            selectTemplate: 'Select Template',
+            instanceName: 'Instance Name',
+            instanceNamePlaceholder: 'Please enter instance name',
+            description: 'Description',
+            descriptionPlaceholder: 'Please enter instance description (optional)',
+            enabled: 'Enable Status',
+            enabledText: 'Enabled',
+            disabledText: 'Disabled',
+            status: 'Status',
+
+            // New configuration parsing related
+            mcpConfigTitle: 'MCP Server Configuration',
+            supportedCommands: 'Supports npx, uvx, node, python commands',
+            pasteConfig: 'Paste Configuration',
+            configPlaceholder: 'Please paste your MCP configuration JSON, for example:\n\nFull format: Contains mcpServers object\nSimplified format: Direct command, args, env fields\n\nSupports npx, uvx, node, python commands\nSupports environment variable configuration',
+            parseConfig: 'Parse Configuration',
+            clearConfig: 'Clear Configuration',
+            fillExample: 'Fill Example',
+            exampleFilled: 'Example configuration filled, please click parse configuration',
+            pasteConfigHint: 'Please paste your MCP server configuration, the system will automatically parse and generate the form',
+            parsedConfigTitle: 'Parsing Results',
+            configParsed: 'Configuration Parsed',
+            detectedCommand: 'Detected Command',
+            detectedArgs: 'Detected Arguments',
+            detectedEnvVars: 'Detected Environment Variables',
+            noEnvVars: 'No environment variables',
+            personalizedConfig: 'Personalized Configuration',
+            configureEnvVars: 'Configure Environment Variables',
+            requiredField: 'Required field',
+            advancedConfig: 'Advanced Configuration',
+
+            // Parsing error messages
+            invalidConfigFormat: 'Invalid configuration format',
+            noServersFound: 'No server configuration found',
+            missingCommand: 'Missing start command',
+            unsupportedCommand: 'Unsupported command: {command}, recommend using npx or uvx',
+            configParsedSuccess: 'Configuration parsed successfully',
+            configParseError: 'Configuration parsing failed',
+            pleaseParseConfig: 'Please parse the configuration before submitting',
+            createError: 'Failed to create instance',
+            updateError: 'Failed to update instance',
+            jsonFormatRequired: 'JSON format',
+            noArgs: 'No arguments',
+            requiredEnvCount: 'Need to configure {count} required environment variables',
+            configParseSuccess: 'Configuration parsed successfully, please fill in personalized information',
+
+            // Command configuration
+            commandConfig: 'Command Configuration',
+            command: 'Start Command',
+            commandPlaceholder: 'Please enter start command',
+            arguments: 'Command Arguments',
+            argumentPlaceholder: 'Argument {index}',
+            addArgument: 'Add Argument',
+            timeout: 'Timeout',
+            timeoutHint: 'Unit: seconds, range: 1-300',
+            autoRestart: 'Auto Restart',
+            autoRestartEnabled: 'Enabled',
+            autoRestartDisabled: 'Disabled',
+
+            // Environment variables
+            environmentVariables: 'Environment Variables',
+            addEnvVar: 'Add Environment Variable',
+            envKeyPlaceholder: 'Variable Name',
+            envValuePlaceholder: 'Variable Value',
+            noEnvironmentVariables: 'No environment variables',
+
+            // Preview
+            configurationPreview: 'Configuration Preview',
+            commandPreview: 'Command Preview',
+            environmentPreview: 'Environment Variables Preview',
+            variable: 'Variable',
+            value: 'Value',
+            seconds: 'seconds',
+
+            // Form validation
+            templateRequired: 'Please select a template',
+            instanceNameRequired: 'Please enter instance name',
+            instanceNameLength: 'Instance name length must be between 2-50 characters',
+            instanceNameFormat: 'Instance name can only contain letters, numbers, underscores and hyphens',
+            commandRequired: 'Please enter start command',
+            timeoutRequired: 'Please enter timeout',
+            timeoutRange: 'Timeout must be between 1-300 seconds'
         }
     }
 }
