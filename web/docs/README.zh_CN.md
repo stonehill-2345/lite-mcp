@@ -8,9 +8,43 @@
 智能助手是一个基于ReAct（Reasoning + Acting）模式的AI系统，通过深度推理和工具调用来解决复杂任务。提供了多种提示词模板和智能化功能。
 
 ## 快速开始
+### 环境配置
+```bash
+# 复制环境配置示例
+cp env.example .env
+
+# 编辑配置（可选，默认配置适用于本地开发）
+nano .env
+```
+
+### 安装和运行
 ```bash
 npm install
 npm run dev
+```
+
+### 环境变量配置
+
+前端使用环境变量管理API配置。可用变量：
+
+| 变量 | 描述 | 默认值 |
+|------|------|--------|
+| `VITE_API_BASE_URL` | 后端API服务器地址 | `http://localhost:9000` |
+| `VITE_PROXY_BASE_URL` | 代理服务器地址 | `http://localhost:1888` |
+| `VITE_API_TIMEOUT` | API请求超时时间(毫秒) | `40000` |
+| `VITE_DEBUG_MODE` | 启用调试模式 | `true` |
+
+### 构建命令
+
+```bash
+# 开发环境
+npm run dev
+
+# 生产构建
+npm run build:production
+
+# 测试环境构建  
+npm run build:staging
 ```
 
 ## 开始使用

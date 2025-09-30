@@ -7,9 +7,46 @@ English | [中文](docs/README.zh_CN.md)
 The Intelligent Assistant is an AI system based on the ReAct (Reasoning + Acting) pattern that solves complex tasks through deep reasoning and tool invocation. It provides multiple prompt templates and intelligent functions.
 
 ## Quick Start
+### Environment Setup
+```bash
+# Copy environment configuration
+cp env.example .env
+
+# Edit configuration if needed (optional, defaults work for local development)
+nano .env
+```
+
+### Install and Run
 ```bash
 npm install
 npm run dev
+```
+
+Visit http://localhost:2345
+
+### Environment Configuration
+
+The frontend uses environment variables for API configuration. Available variables:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VITE_API_BASE_URL` | Backend API server URL | `http://localhost:9000` |
+| `VITE_PROXY_BASE_URL` | Proxy server URL | `http://localhost:1888` |
+| `VITE_API_TIMEOUT` | API request timeout (ms) | `40000` |
+| `VITE_DEBUG_MODE` | Enable debug mode | `true` |
+
+### Build Commands
+
+```bash
+# Development
+npm run dev
+
+# Production build
+npm run build:production
+
+# Staging build  
+npm run build:staging
+
 ```
 
 ## Getting Started

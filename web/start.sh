@@ -76,8 +76,11 @@ install_dependencies() {
 check_backend() {
     print_info "Checking backend service status..."
     
-    if curl -s http://localhost:9000/health > /dev/null 2>&1; then
-        print_success "Backend service is running normally (http://localhost:9000)"
+    # Get API URL from environment or use default
+    API_BASE_URL=${VITE_API_BASE_URL:-"http://localhost:9000"}
+
+    if curl -s "${API_BASE_URL}/api/v1/health" > /dev/null 2>&1; then
+        print_success "Backend service is running normally (${API_BASE_URL})"
     else
         print_warning "Backend service is not started, please start the backend service first:"
         echo "  cd .."

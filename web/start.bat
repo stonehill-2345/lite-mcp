@@ -58,7 +58,9 @@ if not exist "node_modules" (
 
 REM Check backend service
 echo [INFO] Checking backend service status...
-curl -s http://localhost:9000/health >nul 2>&1
+REM Get API URL from environment or use default
+if not defined VITE_API_BASE_URL set VITE_API_BASE_URL=http://localhost:9000
+curl -s "%VITE_API_BASE_URL%/api/v1/health" >nul 2>&1
 if errorlevel 1 (
     echo [WARNING] Backend service is not started, please start the backend service first:
     echo   cd ..
@@ -66,7 +68,7 @@ if errorlevel 1 (
     echo.
     echo [INFO] Continuing to start frontend service...
 ) else (
-    echo [SUCCESS] Backend service is running normally (http://localhost:9000)
+    echo [SUCCESS] Backend service is running normally (%VITE_API_BASE_URL%)
 )
 
 REM Start development server
