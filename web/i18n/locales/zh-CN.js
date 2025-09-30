@@ -46,7 +46,9 @@ export default {
         export: '导出',
         characters: '字符',
         moreSettings: '更多设置',
-        stop: '停止'
+        stop: '停止',
+        create: '创建',
+        update: '更新'
     },
 
     // 页面标题
@@ -172,7 +174,43 @@ export default {
             reasoningDetails: '推理详情',
             detailedTrace: '详细推理轨迹',
             mainAnswer: '主要回答内容',
-            reasoningStats: '推理统计'
+            reasoningStats: '推理统计',
+
+            // 通用消息
+
+            // 成功消息
+            jsonFormatCompleted: 'JSON格式化完成',
+            exampleConfigLoaded: '示例配置已加载',
+            toolListRefreshCompleted: '工具列表刷新完成',
+            settingsSavedLocally: '设置已保存并存储到本地',
+            resetToDefaults: '已重置为默认设置',
+            configExported: '配置已导出',
+            configImportedApplied: '配置已导入并应用',
+
+            // 错误消息
+            jsonFormatError: 'JSON格式错误，无法格式化',
+            loadExampleFailed: '加载示例配置失败',
+            refreshToolsFailed: '刷新工具失败',
+            resetConfigFailed: '重置配置失败',
+            selectModelProvider: '请选择模型提供商',
+            selectOrEnterModel: '请选择或输入模型',
+            temperatureRange: '温度值必须在0-2之间',
+            maxTokensRange: '最大令牌数必须在1-200000之间',
+            configureAzureEndpoint: '请配置Azure终结点或基础URL',
+            configureDeploymentName: '请配置部署名称',
+            configureApiVersion: '请配置API版本',
+            enterBaseUrl: '请输入基础URL',
+            exportConfigFailed: '导出配置失败',
+            importConfigFailed: '导入配置失败',
+            loadSavedConfigFailed: '加载保存的配置失败，使用默认配置',
+            readClipboardFailed: '读取剪贴板失败',
+            autoConnectFailed: '自动连接出错',
+
+            // 警告消息
+            noConnectedServers: '没有已连接的服务器',
+            connectServerFirst: '请先连接服务器',
+            noAvailableTools: '此服务器没有可用工具',
+            autoConnectCompletedAllFailed: '自动连接完成，但所有服务器连接都失败了'
         },
 
         // 聊天输入框
@@ -247,7 +285,17 @@ export default {
             copySuccess: '消息已复制到剪贴板',
             copyFailed: '复制失败，请重试',
             stopProcessing: '正在停止AI处理，即将完成...',
-            stopSuccess: '已停止处理'
+            stopSuccess: '已停止处理',
+
+            // 通用确认对话框
+            loadExampleConfirm: '加载示例配置将覆盖所有当前配置内容。此操作无法撤销。',
+            loadExampleTitle: '确认加载示例',
+            resetSettingsConfirm: '确定要重置为默认设置吗？这将清除所有自定义配置。',
+            resetSettingsTitle: '重置设置',
+
+            // 通用按钮文本
+            confirmLoad: '确认加载',
+            confirmReset: '确认重置'
         },
 
         // 配置验证
@@ -901,6 +949,14 @@ export default {
             tools: '工具',
             collapseTools: '收起工具',
             expandTools: '展开工具',
+            deleteServer: '删除服务器',
+            cannotDeleteEnabledServer: '无法删除已启用的服务器，请先禁用后再删除',
+            deleteServerTitle: '确认删除服务器',
+            deleteServerConfirm: '确定要删除服务器 "{name}" 吗？此操作不可撤销。',
+            serverDeleted: '服务器 "{name}" 已删除',
+            deleteServerFailed: '删除服务器失败：{error}',
+            configParseError: '配置解析失败',
+            serverNotFound: '服务器 "{name}" 在配置中不存在',
             availableToolsList: '可用工具列表 ({count} 个)',
             enableAll: '全部启用',
             disableAll: '全部禁用',
@@ -937,7 +993,11 @@ export default {
                 sseServers: 'SSE 服务器',
                 streamableServers: 'Streamable HTTP',
                 totalTools: '工具总数',
-                suggestion: '建议≤40'
+                suggestion: '建议≤40',
+                externalMcp: '外部MCP服务',
+                running: '运行中',
+                clickToManage: '点击管理配置',
+                externalMcpTooltip: '管理第三方MCP服务配置，如GitHub、GitLab、时间服务等'
             },
 
             // 服务器类型
@@ -1066,7 +1126,189 @@ export default {
                 notFound: '未找到工具详情信息',
                 fetchFailed: '获取工具详情失败: {error}',
                 networkError: '网络错误'
+            },
+            toolsDetail: {
+                projectToolsTitle: '项目 "{name}" 的工具列表',
+                authorToolsTitle: '作者 "{name}" 的工具列表',
+                totalTools: '工具总数',
+                project: '项目',
+                author: '作者',
+                toolName: '工具名称',
+                description: '描述',
+                serverName: '服务器名称',
+                authorName: '作者姓名',
+                department: '部门',
+                parameters: '参数',
+                returnType: '返回类型',
+                noParameters: '无参数',
+                noTools: '暂无工具',
+                fetchError: '获取工具列表失败'
             }
+        },
+
+        // 外部MCP管理
+        externalManager: {
+            title: '外部MCP服务管理',
+            manage: '管理外部MCP',
+
+            // 实例管理
+            createInstance: '新建实例',
+            editInstance: '编辑实例',
+            deleteInstance: '删除实例',
+            instanceName: '实例名称',
+            templateName: '模板名称',
+            description: '描述',
+            command: '启动命令',
+            environment: '环境变量',
+            enabled: '已启用',
+            disabled: '已禁用',
+            status: '状态',
+
+            // 搜索和筛选
+            searchPlaceholder: '搜索实例名称、命令或描述...',
+            allStatus: '所有状态',
+
+            // 批量操作
+            batchOperations: '批量操作',
+            selectedCount: '已选择 {count} 个实例',
+            batchEnable: '批量启用',
+            batchDisable: '批量禁用',
+            batchDelete: '批量删除',
+
+            // 统计信息
+            totalInstances: '实例总数',
+            enabledInstances: '启用实例',
+            disabledInstances: '禁用实例',
+            refreshPending: '有变更待刷新，关闭弹窗时将更新配置',
+
+            // 环境变量
+            envVars: '环境变量',
+
+            // 操作确认
+            deleteConfirm: '确定要删除实例 "{name}" 吗？此操作不可撤销。',
+            cannotDeleteEnabled: '无法删除启用状态的实例 "{name}"，请先禁用后再删除。',
+            cannotDeleteEnabledBatch: '无法删除 {count} 个启用状态的实例：{names}，请先禁用后再删除。',
+            cannotDeleteEnabledTooltip: '启用状态的实例不能删除，请先禁用',
+            batchDeleteConfirm: '确定要删除选中的 {count} 个实例吗？此操作不可撤销。',
+
+            // 操作消息
+            loadDataError: '加载数据失败',
+            refreshSuccess: '数据刷新成功',
+            deleteSuccess: '实例删除成功',
+            deleteError: '删除实例失败',
+            enableSuccess: '实例 "{name}" 启用成功',
+            enableError: '启用实例失败',
+            disableSuccess: '实例 "{name}" 禁用成功',
+            disableError: '禁用实例失败',
+            createSuccess: '实例创建成功',
+            createError: '创建实例失败',
+            updateSuccess: '实例更新成功',
+            updateError: '更新实例失败',
+
+            // 批量操作消息
+            noDisabledSelected: '没有选择已禁用的实例',
+            noEnabledSelected: '没有选择已启用的实例',
+            noInstancesSelected: '没有选择任何实例',
+            batchEnableSuccess: '批量启用成功，共 {count} 个实例',
+            batchEnableError: '批量启用失败',
+            batchDisableSuccess: '批量禁用成功，共 {count} 个实例',
+            batchDisableError: '批量禁用失败',
+            batchDeleteSuccess: '批量删除成功，共 {count} 个实例',
+            batchDeleteError: '批量删除失败'
+        },
+
+        // 实例表单
+        instanceForm: {
+            createTitle: '创建MCP实例',
+            editTitle: '编辑MCP实例',
+            basicInfo: '基本信息',
+            environment: '环境变量',
+            preview: '预览',
+
+            // 基本信息
+            templateName: '模板名称',
+            selectTemplate: '选择模板',
+            instanceName: '实例名称',
+            instanceNamePlaceholder: '请输入实例名称',
+            description: '描述',
+            descriptionPlaceholder: '请输入实例描述（可选）',
+            enabled: '启用状态',
+            enabledText: '已启用',
+            disabledText: '已禁用',
+            status: '状态',
+
+            // 新的配置解析相关
+            mcpConfigTitle: 'MCP服务器配置',
+            supportedCommands: '支持 npx、uvx、node、python 等命令',
+            pasteConfig: '粘贴配置',
+            configPlaceholder: '请粘贴您的MCP配置JSON，例如：\n\n完整格式示例：包含 mcpServers 对象\n简化格式示例：直接包含 command、args、env 字段\n\n支持 npx、uvx、node、python 等命令\n支持环境变量配置',
+            parseConfig: '解析配置',
+            clearConfig: '清空配置',
+            fillExample: '填入示例',
+            exampleFilled: '示例配置已填入，请点击解析配置',
+            pasteConfigHint: '请粘贴您的MCP服务器配置，系统将自动解析并生成表单',
+            parsedConfigTitle: '解析结果',
+            configParsed: '配置已解析',
+            detectedCommand: '检测到的命令',
+            detectedArgs: '检测到的参数',
+            detectedEnvVars: '检测到的环境变量',
+            noEnvVars: '无环境变量',
+            personalizedConfig: '个性化配置',
+            configureEnvVars: '配置环境变量',
+            requiredField: '必填字段',
+            advancedConfig: '高级配置',
+
+            // 解析错误信息
+            invalidConfigFormat: '无效的配置格式',
+            noServersFound: '未找到服务器配置',
+            missingCommand: '缺少启动命令',
+            unsupportedCommand: '不支持的命令: {command}，建议使用 npx 或 uvx',
+            configParsedSuccess: '配置解析成功',
+            configParseError: '配置解析失败',
+            pleaseParseConfig: '请先解析配置后再提交',
+            createError: '创建实例失败',
+            updateError: '更新实例失败',
+            jsonFormatRequired: 'JSON格式',
+            noArgs: '无参数',
+            requiredEnvCount: '需要配置 {count} 个必填环境变量',
+            configParseSuccess: '配置已成功解析，请填写个性化信息',
+
+            // 命令配置
+            commandConfig: '命令配置',
+            command: '启动命令',
+            commandPlaceholder: '请输入启动命令',
+            arguments: '命令参数',
+            argumentPlaceholder: '参数 {index}',
+            addArgument: '添加参数',
+            timeout: '超时时间',
+            timeoutHint: '单位：秒，范围：1-300',
+            autoRestart: '自动重启',
+            autoRestartEnabled: '已启用',
+            autoRestartDisabled: '已禁用',
+
+            // 环境变量
+            environmentVariables: '环境变量',
+            addEnvVar: '添加环境变量',
+            envKeyPlaceholder: '变量名',
+            envValuePlaceholder: '变量值',
+            noEnvironmentVariables: '暂无环境变量',
+
+            // 预览
+            configurationPreview: '配置预览',
+            commandPreview: '启动命令预览',
+            environmentPreview: '环境变量预览',
+            variable: '变量名',
+            value: '变量值',
+            seconds: '秒',
+
+            // 表单验证
+            templateRequired: '请选择模板',
+            instanceNameRequired: '请输入实例名称',
+            instanceNameLength: '实例名称长度必须在2-50个字符之间',
+            instanceNameFormat: '实例名称只能包含字母、数字、下划线和连字符',
+            commandRequired: '请输入启动命令',
+            timeoutRequired: '请输入超时时间',
+            timeoutRange: '超时时间必须在1-300秒之间'
         }
     }
 }

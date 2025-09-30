@@ -242,6 +242,18 @@
                   {{ server.toolsExpanded ? t('mcp.configCenter.collapseTools') : t('mcp.configCenter.expandTools') }}
                   <span v-if="server.connected">({{ server.tools?.length || 0 }})</span>
                 </el-button>
+
+                <!-- Delete server button (only for disabled servers) -->
+                <el-button
+                    :icon="Delete"
+                    size="small"
+                    type="danger"
+                    @click="handleDeleteServer(server)"
+                    :disabled="server.enabled"
+                    :title="server.enabled ? t('mcp.configCenter.cannotDeleteEnabledServer') : t('mcp.configCenter.deleteServer')"
+                >
+                  {{ t('common.delete') }}
+                </el-button>
               </div>
             </div>
 
@@ -345,15 +357,14 @@
     <!-- Config center dialog -->
     <el-dialog
         v-model="configCenterVisible"
-        :title="t('mcp.configCenter.title')"
         width="100%"
         class="config-center"
         :fullscreen="false"
         destroy-on-close
     >
-      <div 
-        class="config-center-content" 
-        v-loading="configCenterLoading" 
+      <div
+        class="config-center-content"
+        v-loading="configCenterLoading"
         :element-loading-text="t('common.loading')"
       >
         <div v-if="configCenterLoading" class="loading-placeholder">
@@ -385,7 +396,8 @@ import {
   CircleCheckFilled,
   QuestionFilled,
   Setting,
-  Search
+  Search,
+  Delete
 } from '@element-plus/icons-vue'
 import mcpClientManager from '@/utils/mcpClient'
 import mcpConnectionService from '@/services/mcp/McpConnectionService.js'
@@ -787,13 +799,13 @@ const formatJson = () => {
   try {
     const parsed = JSON.parse(configJson.value)
     configJson.value = JSON.stringify(parsed, null, 2)
-    ElMessage.success('JSON formatting completed')
+    ElMessage.success(t('chat.messages.jsonFormatCompleted'))
     emit('update:modelValue', configJson.value)
 
     // Save to cache
     setCache(CONFIG_CACHE_KEY, configJson.value)
   } catch (error) {
-    ElMessage.error('JSON format error, unable to format')
+    ElMessage.error(t('chat.messages.jsonFormatError'))
   }
 }
 
@@ -801,9 +813,9 @@ const loadExample = async (skipConfirm = false) => {
   try {
     // If not skipping confirmation, show confirmation dialog (except for first initialization)
     if (!skipConfirm) {
-      await ElMessageBox.confirm('Loading example configuration will overwrite all current configuration content. This operation cannot be undone.', 'Confirm Load Example', {
-        confirmButtonText: 'Confirm Load',
-        cancelButtonText: 'Cancel',
+      await ElMessageBox.confirm(t('chat.dialogs.loadExampleConfirm'), t('chat.dialogs.loadExampleTitle'), {
+        confirmButtonText: t('chat.dialogs.confirmLoad'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning',
         customClass: 'mcp-confirm-dialog',
         center: true,
@@ -818,14 +830,14 @@ const loadExample = async (skipConfirm = false) => {
     setCache(CONFIG_CACHE_KEY, configJson.value)
 
     if (!skipConfirm) {
-      ElMessage.success('Example configuration loaded')
+      ElMessage.success(t('chat.messages.exampleConfigLoaded'))
     }
   } catch (error) {
     // User cancelled operation, no need to prompt
     if (error === 'cancel' || error === 'close') {
       return
     }
-    ElMessage.error('Failed to load example configuration')
+    ElMessage.error(t('chat.messages.loadExampleFailed'))
   }
 }
 
@@ -840,7 +852,7 @@ const refreshServerTools = async () => {
     const connectedServers = serverConfigs.value.filter(server => server.connected && server.sessionId)
 
     if (connectedServers.length === 0) {
-      ElMessage.warning('No connected servers')
+      ElMessage.warning(t('chat.messages.noConnectedServers'))
       return
     }
 
@@ -862,10 +874,10 @@ const refreshServerTools = async () => {
       }
     }
 
-    ElMessage.success('Tool list refresh completed')
+    ElMessage.success(t('chat.messages.toolListRefreshCompleted'))
     emitConfigChange()
   } catch (error) {
-    ElMessage.error('Failed to refresh tools')
+    ElMessage.error(t('chat.messages.refreshToolsFailed'))
   } finally {
     refreshing.value = false
   }
@@ -878,12 +890,12 @@ const toggleServerTools = (server) => {
 
 const enableAllServerTools = (server) => {
   if (!server.connected) {
-    ElMessage.warning('Please connect to server first')
+    ElMessage.warning(t('chat.messages.connectServerFirst'))
     return
   }
 
   if (!server.tools || server.tools.length === 0) {
-    ElMessage.warning('This server has no available tools')
+    ElMessage.warning(t('chat.messages.noAvailableTools'))
     return
   }
 
@@ -918,12 +930,12 @@ const enableAllServerTools = (server) => {
 
 const disableAllServerTools = (server) => {
   if (!server.connected) {
-    ElMessage.warning('Please connect to server first')
+    ElMessage.warning(t('chat.messages.connectServerFirst'))
     return
   }
 
   if (!server.tools || server.tools.length === 0) {
-    ElMessage.warning('This server has no available tools')
+    ElMessage.warning(t('chat.messages.noAvailableTools'))
     return
   }
 
@@ -947,7 +959,7 @@ const disableAllServerTools = (server) => {
 
 const handleToolToggle = (server, tool) => {
   if (!server.connected) {
-    ElMessage.warning('Please connect to server first')
+    ElMessage.warning(t('chat.messages.connectServerFirst'))
     tool.enabled = false // Force to disabled state
     return
   }
@@ -1009,6 +1021,108 @@ const isNewServer = (server) => {
 const showToolDetails = (tool) => {
   currentTool.value = tool
   toolDetailVisible.value = true
+}
+
+// Handle delete server
+const handleDeleteServer = async (server) => {
+  try {
+    // Double check: only allow deleting disabled servers
+    if (server.enabled) {
+      ElMessage.warning(t('mcp.configCenter.cannotDeleteEnabledServer'))
+      return
+    }
+
+    // Show confirmation dialog
+    await ElMessageBox.confirm(
+      t('mcp.configCenter.deleteServerConfirm', { name: server.name }),
+      t('mcp.configCenter.deleteServerTitle'),
+      {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning',
+        customClass: 'mcp-confirm-dialog',
+        center: true,
+      }
+    )
+
+    logger.log(`🗑️ User confirmed deletion of server: ${server.name}`)
+
+    // Parse current configuration
+    let currentConfig = {}
+    if (configJson.value.trim()) {
+      try {
+        currentConfig = JSON.parse(configJson.value)
+      } catch (error) {
+        ElMessage.error(t('mcp.configCenter.configParseError'))
+        return
+      }
+    }
+
+    // Check if mcpServers exists
+    if (!currentConfig.mcpServers) {
+      ElMessage.error(t('mcp.configCenter.noServersFound'))
+      return
+    }
+
+    // Check if server exists in configuration
+    if (!currentConfig.mcpServers[server.name]) {
+      ElMessage.warning(t('mcp.configCenter.serverNotFound', { name: server.name }))
+      return
+    }
+
+    // Remove server from configuration
+    delete currentConfig.mcpServers[server.name]
+
+    // Update configuration JSON
+    configJson.value = JSON.stringify(currentConfig, null, 2)
+    emit('update:modelValue', configJson.value)
+
+    // CRITICAL: Instead of re-parsing entire config (which would lose all connections),
+    // just remove the server from the existing serverConfigs array
+    const serverIndex = serverConfigs.value.findIndex(s => s.name === server.name)
+    if (serverIndex !== -1) {
+      // Remove the server from the array without affecting other servers
+      serverConfigs.value.splice(serverIndex, 1)
+      logger.log(`🗑️ Removed server ${server.name} from serverConfigs array (index: ${serverIndex})`)
+    }
+
+    // Save to cache
+    setCache(CONFIG_CACHE_KEY, configJson.value)
+
+    // Remove from user state cache
+    if (userStateCache.value.enabledServers[server.name] !== undefined) {
+      delete userStateCache.value.enabledServers[server.name]
+    }
+    if (userStateCache.value.expandedServers[server.name] !== undefined) {
+      delete userStateCache.value.expandedServers[server.name]
+    }
+
+    // Remove all tools of this server from user state cache
+    Object.keys(userStateCache.value.enabledTools).forEach(toolKey => {
+      if (toolKey.startsWith(`${server.name}.`)) {
+        delete userStateCache.value.enabledTools[toolKey]
+      }
+    })
+
+    // Save updated user state
+    saveUserState()
+
+    logger.log(`✅ Server ${server.name} successfully deleted from configuration`)
+    ElMessage.success(t('mcp.configCenter.serverDeleted', { name: server.name }))
+
+    // Emit configuration change (this will reflect the updated serverConfigs)
+    emitConfigChange()
+
+  } catch (error) {
+    // User cancelled operation
+    if (error === 'cancel' || error === 'close') {
+      return
+    }
+
+    logger.error('Failed to delete server:', error)
+    console.error('Failed to delete server:', error)
+    ElMessage.error(t('mcp.configCenter.deleteServerFailed', { error: error.message }))
+  }
 }
 
 // Show config center
@@ -1288,13 +1402,13 @@ const autoConnectEnabledServers = async () => {
           `Auto-connect completed, successfully connected ${result.success} servers`
       ElMessage.success(message)
     } else if (result.total > 0) {
-      ElMessage.warning('Auto-connect completed, but all server connections failed')
+      ElMessage.warning(t('chat.messages.autoConnectCompletedAllFailed'))
     }
 
     return result
   } catch (error) {
     logger.error('❌ Error occurred during auto-connect:', error)
-    ElMessage.error('Error occurred during auto-connect')
+    ElMessage.error(t('chat.messages.autoConnectFailed'))
     throw error
   }
 }
@@ -1906,6 +2020,30 @@ defineExpose({
 
           .server-actions {
             flex-shrink: 0;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+
+            .el-button {
+              &.is-disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+              }
+
+              &[type="danger"] {
+                &.is-disabled {
+                  background: #f5f5f5;
+                  border-color: #e4e7ed;
+                  color: #c0c4cc;
+
+                  &:hover {
+                    background: #f5f5f5;
+                    border-color: #e4e7ed;
+                    color: #c0c4cc;
+                  }
+                }
+              }
+            }
           }
         }
 
