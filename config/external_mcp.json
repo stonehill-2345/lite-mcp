@@ -1,7 +1,7 @@
 {
   "instances": {
-    "2082565d-fae6-40ff-89a4-4c1dabdf21f8": {
-      "instance_id": "2082565d-fae6-40ff-89a4-4c1dabdf21f8",
+    "4c45c2f5-0244-4399-9961-0d0c292ab281": {
+      "instance_id": "4c45c2f5-0244-4399-9961-0d0c292ab281",
       "instance_name": "time",
       "name": "time",
       "template_name": "custom",
@@ -16,17 +16,16 @@
       "timeout": 30,
       "auto_restart": true,
       "transport": "http",
-      "host": "172.17.18.20",
-      "port": 8001,
-      "created_at": "2025-09-28T16:13:53.330175",
-      "updated_at": "2025-09-28T16:13:53.330187",
-      "updated": "2025-09-29T18:43:40.193331"
+      "host": null,
+      "port": null,
+      "created_at": "2025-10-09T17:31:32.077808",
+      "updated_at": "2025-10-09T17:31:32.077816"
     }
   },
   "meta": {
     "version": "1.0.0",
-    "created": "2024-12-19",
+    "created": "2025-10-01",
     "description": "User configured external MCP service instances",
-    "last_updated": "2025-09-29T18:43:40.193579"
+    "last_updated": "2025-10-09T17:31:32.078173"
   }
 }
