@@ -342,6 +342,36 @@ async def get_authors_batch(author_names: list[str]):
         raise HTTPException(status_code=500, detail=f"Failed to batch get author statistics: {str(e)}")
 
 
+@router.get("/authors/{author_name}/tools", summary="Get author tools",
+            description="Get all tools under the specified author")
+async def get_author_tools(author_name: str):
+    """Get all tools under the specified author
+
+    Args:
+        author_name: Author name
+
+    Returns:
+        List of tools under the author
+    """
+    try:
+        tools = []
+        for tool in statistics_manager.tools.values():
+            if tool.author.name == author_name:
+                tools.append(tool.to_dict())
+
+        logger.info(f"Successfully retrieved tools for author '{author_name}': {len(tools)} tools")
+        return {
+            "success": True,
+            "data": tools,
+            "count": len(tools),
+            "author": author_name,
+            "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+    except Exception as e:
+        logger.error(f"Failed to retrieve tools for author '{author_name}': {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get author tools: {str(e)}")
+
+
 @router.get("/projects", summary="Get Project Statistics", description="Get statistics information grouped by project")
 async def get_project_statistics():
     """Get project statistics information

@@ -358,6 +358,212 @@ export const getMcpStatistics = async (customUrl = null) => {
   }
 }
 
+/**
+ * Get tools list for a specific project
+ * @param {string} projectName - Project name
+ * @returns {Promise} API response with tools list
+ */
+export const getProjectTools = async (projectName) => {
+  return apiClient.get(`/api/v1/statistics/projects/${encodeURIComponent(projectName)}/tools`)
+}
+
+/**
+ * Get tools list for a specific author
+ * @param {string} authorName - Author name
+ * @returns {Promise} API response with tools list
+ */
+export const getAuthorTools = async (authorName) => {
+  return apiClient.get(`/api/v1/statistics/authors/${encodeURIComponent(authorName)}/tools`)
+}
+
+// ========== External MCP Management API ==========
+
+
+/**
+ * Get all external MCP instances
+ * @param {boolean} enabledOnly - Only return enabled instances
+ * @returns {Promise} API response
+ */
+export const getExternalMcpInstances = (enabledOnly = false) => {
+  const params = enabledOnly ? { enabled_only: true } : {}
+  return apiClient.get('/api/v1/external-mcp/instances', { params })
+}
+
+/**
+ * Get specific external MCP instance
+ * @param {string} instanceId - Instance ID
+ * @returns {Promise} API response
+ */
+export const getExternalMcpInstance = (instanceId) => {
+  return apiClient.get(`/api/v1/external-mcp/instances/${encodeURIComponent(instanceId)}`)
+}
+
+/**
+ * Create new external MCP instance
+ * @param {Object} config - Instance configuration
+ * @returns {Promise} API response
+ */
+export const createExternalMcpInstance = (config) => {
+  return apiClient.post('/api/v1/external-mcp/instances', config)
+}
+
+/**
+ * Update external MCP instance
+ * @param {string} instanceId - Instance ID
+ * @param {Object} updateConfig - Update configuration
+ * @returns {Promise} API response
+ */
+export const updateExternalMcpInstance = (instanceId, updateConfig) => {
+  return apiClient.put(`/api/v1/external-mcp/instances/${encodeURIComponent(instanceId)}`, updateConfig)
+}
+
+/**
+ * Delete external MCP instance
+ * @param {string} instanceId - Instance ID
+ * @returns {Promise} API response
+ */
+export const deleteExternalMcpInstance = (instanceId) => {
+  return apiClient.delete(`/api/v1/external-mcp/instances/${encodeURIComponent(instanceId)}`)
+}
+
+/**
+ * Enable external MCP instance
+ * @param {string} instanceId - Instance ID
+ * @returns {Promise} API response
+ */
+export const enableExternalMcpInstance = (instanceId) => {
+  // 自动传递代理URL参数，确保服务能正确注册到代理
+  const proxyUrl = API_CONFIG.PROXY_BASE_URL
+  // 外部MCP启用需要更长时间，使用60秒超时
+  return apiClient.post(`/api/v1/external-mcp/instances/${encodeURIComponent(instanceId)}/enable?proxy_url=${encodeURIComponent(proxyUrl)}`, {}, {
+    timeout: 60000 // 60秒超时，适应外部MCP服务启动和健康检查时间
+  })
+}
+
+/**
+ * Disable external MCP instance
+ * @param {string} instanceId - Instance ID
+ * @returns {Promise} API response
+ */
+export const disableExternalMcpInstance = (instanceId) => {
+  // 自动传递代理URL参数，确保服务能正确从代理注销
+  const proxyUrl = API_CONFIG.PROXY_BASE_URL
+  // 外部MCP禁用也可能需要较长时间，使用30秒超时
+  return apiClient.post(`/api/v1/external-mcp/instances/${encodeURIComponent(instanceId)}/disable?proxy_url=${encodeURIComponent(proxyUrl)}`, {}, {
+    timeout: 30000 // 30秒超时
+  })
+}
+
+/**
+ * Validate external MCP instance configuration
+ * @param {string} instanceId - Instance ID
+ * @returns {Promise} API response
+ */
+export const validateExternalMcpInstance = (instanceId) => {
+  return apiClient.get(`/api/v1/external-mcp/instances/${encodeURIComponent(instanceId)}/validate`)
+}
+
+/**
+ * Reload external MCP configuration
+ * @returns {Promise} API response
+ */
+export const reloadExternalMcpConfig = () => {
+  return apiClient.post('/api/v1/external-mcp/reload')
+}
+
+/**
+ * Get external MCP service status
+ * @returns {Promise} API response
+ */
+export const getExternalMcpStatus = () => {
+  return apiClient.get('/api/v1/external-mcp/status')
+}
+
+/**
+ * Get running external MCP services
+ * @returns {Promise} API response
+ */
+export const getExternalMcpRunningServices = () => {
+  return apiClient.get('/api/v1/external-mcp/services/running')
+}
+
+/**
+ * Get external MCP service status by instance ID
+ * @param {string} instanceId - Instance ID
+ * @returns {Promise} API response
+ */
+export const getExternalMcpServiceStatus = (instanceId) => {
+  return apiClient.get(`/api/v1/external-mcp/services/${encodeURIComponent(instanceId)}/status`)
+}
+
+/**
+ * Start external MCP service
+ * @param {string} instanceId - Instance ID
+ * @param {string} transport - Transport protocol (stdio/http/sse)
+ * @param {string} host - Host address (optional)
+ * @param {number} port - Port number (optional)
+ * @returns {Promise} API response
+ */
+export const startExternalMcpService = (instanceId, transport = 'http', host = null, port = null) => {
+  const params = new URLSearchParams()
+  if (transport) params.append('transport', transport)
+  if (host) params.append('host', host)
+  if (port) params.append('port', port.toString())
+
+  const url = `/api/v1/external-mcp/services/${encodeURIComponent(instanceId)}/start${params.toString() ? '?' + params.toString() : ''}`
+  return apiClient.post(url)
+}
+
+/**
+ * Stop external MCP service
+ * @param {string} instanceId - Instance ID
+ * @returns {Promise} API response
+ */
+export const stopExternalMcpService = (instanceId) => {
+  return apiClient.post(`/api/v1/external-mcp/services/${encodeURIComponent(instanceId)}/stop`)
+}
+
+/**
+ * Restart external MCP service
+ * @param {string} instanceId - Instance ID
+ * @param {string} transport - Transport protocol (stdio/http/sse)
+ * @param {string} host - Host address (optional)
+ * @param {number} port - Port number (optional)
+ * @returns {Promise} API response
+ */
+export const restartExternalMcpService = (instanceId, transport = 'http', host = null, port = null) => {
+  const params = new URLSearchParams()
+  if (transport) params.append('transport', transport)
+  if (host) params.append('host', host)
+  if (port) params.append('port', port.toString())
+
+  const url = `/api/v1/external-mcp/services/${encodeURIComponent(instanceId)}/restart${params.toString() ? '?' + params.toString() : ''}`
+  return apiClient.post(url)
+}
+
+/**
+ * Start all enabled external MCP services
+ * @param {string} transport - Transport protocol (stdio/http/sse)
+ * @param {string} host - Host address (optional)
+ * @returns {Promise} API response
+ */
+export const startAllExternalMcpServices = (transport = 'http', host = null) => {
+  const params = new URLSearchParams()
+  if (transport) params.append('transport', transport)
+  if (host) params.append('host', host)
+
+  const url = `/api/v1/external-mcp/services/start-all${params.toString() ? '?' + params.toString() : ''}`
+  return apiClient.post(url)
+}
+
+/**
+ * Stop all external MCP services
+ * @returns {Promise} API response
+ */
+export const stopAllExternalMcpServices = () => {
+  return apiClient.post('/api/v1/external-mcp/services/stop-all')
+}
+
 // Default export all API methods
 export default {
   // Basic configuration API
@@ -395,5 +601,26 @@ export default {
   // Helper methods
   getMcpApiUrl,
   getMcpConfigWithUrl,
-  getMcpStatistics
+  getMcpStatistics,
+  getProjectTools,
+  getAuthorTools,
+
+  // External MCP Management API
+  getExternalMcpInstances,
+  getExternalMcpInstance,
+  createExternalMcpInstance,
+  updateExternalMcpInstance,
+  deleteExternalMcpInstance,
+  enableExternalMcpInstance,
+  disableExternalMcpInstance,
+  validateExternalMcpInstance,
+  reloadExternalMcpConfig,
+  getExternalMcpStatus,
+  getExternalMcpRunningServices,
+  getExternalMcpServiceStatus,
+  startExternalMcpService,
+  stopExternalMcpService,
+  restartExternalMcpService,
+  startAllExternalMcpServices,
+  stopAllExternalMcpServices
 }

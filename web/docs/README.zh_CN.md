@@ -112,10 +112,35 @@ npm run build:staging
 正式开始使用：
 ![UseTheAssistant.png](cn-img/UseTheAssistant.png)
 
+### 配置管理外部MCP配置
+> 如有需要可配置由npx、uvx运行的外部mcp服务统一由LiteMCP管理、启动再由proxy统一提供对外服务。
+
+以mcp-server-time为例：
+```json
+{
+  "mcpServers": {
+    "time": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-time",
+        "--local-timezone=America/New_York"
+      ]
+    }
+  }
+}
+```
+操作路径：MCP配置 -> 配置中心 -> 外部MCP服务(页面顶部右上角) -> 新建实例 -> 粘贴配置 -> 解析配置 -> 创建 -> 启用 -> 关闭外部MCP服务弹窗 -> 搜索新增mcp server配置
+![MCPSetting.png](cn-img/MCPSetting.png)
+![ConfigCenter.png](cn-img/ConfigCenter.png)
+![ExternalMCPConfig.png](cn-img/ExternalMCPConfig.png)
+![AddExternalConfig.png](cn-img/AddExternalConfig.png)
+![AddNewExternal.png](cn-img/AddNewExternal.png)
+![EnableExternal.png](cn-img/EnableExternal.png)
+![UseExternalServices.png](cn-img/UseExternalServices.png)
 
 ## 🌐 Web前端开发
 
-LiteMCP提供了现代化的Web界面，基于Vue 3 + Vite构建。
+TestMCP提供了现代化的Web界面，基于Vue 3 + Vite构建。
 
 ### 🚀 快速启动前端
 

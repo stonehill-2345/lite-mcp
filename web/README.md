@@ -119,6 +119,33 @@ Start using:
 ![UseTheAssistant.png](docs/en-img/UseTheAssistant.png)
 
 
+### Configure External MCP Services
+> If needed, you can configure external MCP services run by npx, uvx to be managed by LiteMCP, started and then provided externally through proxy.
+
+Using mcp-server-time as an example:
+```json
+{
+  "mcpServers": {
+    "time": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-time",
+        "--local-timezone=America/New_York"
+      ]
+    }
+  }
+}
+```
+Operation Path: MCP Configuration -> Configuration Center -> External MCP Services (top right corner of page) -> New Instance -> Paste Configuration -> Parse Configuration -> Create -> Enable -> Close External MCP Service Dialog -> Search for New MCP Server Configuration
+![MCPSetting.png](docs/en-img/MCPSetting.png)
+![ConfigCenter.png](docs/en-img/ConfigCenter.png)
+![ExternalMCPConfig.png](docs/en-img/ExternalMCPConfig.png)
+![AddExternalConfig.png](docs/en-img/AddExternalConfig.png)
+![AddNewExternal.png](docs/en-img/AddNewExternal.png)
+![EnableExternal.png](docs/en-img/EnableExternal.png)
+![UseExternalServices.png](docs/en-img/UseExternalServices.png)
+
+
 ## 🌐 Web Frontend Development
 
 LiteMCP provides a modern web interface built on Vue 3 + Vite.

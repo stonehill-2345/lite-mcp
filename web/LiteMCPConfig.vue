@@ -1,75 +1,86 @@
 <template>
   <div class="mcp-config-container" :class="{ 'embedded-mode': embedded }">
-    <!-- Page Header -->
-    <div v-if="!embedded" class="page-header">
+    <!-- Page Header with Inline Collapse -->
+    <div class="page-header">
       <div class="header-content">
-        <div class="title-section">
-          <h1 class="page-title">{{ $t('mcp.configCenter.title') }}</h1>
-          <p class="page-subtitle">
-            {{ $t('mcp.configCenter.subtitle') }}
-          </p>
-        </div>
-        <div class="header-actions">
-          <!-- API Address Display and Edit -->
-          <div class="api-url-section">
-            <div class="api-url-label">{{ $t('mcp.configCenter.apiAddress') }}</div>
-            <div class="api-url-input-group" v-if="isEditingApiUrl">
-              <el-input
-                v-model="tempApiUrl"
-                :placeholder="defaultMcpApiUrl"
-                size="default"
-                class="api-url-input"
-                @keyup.enter="confirmEditApiUrl"
-                @keyup.esc="cancelEditApiUrl"
-              />
-              <el-button
-                :icon="Check"
-                type="success"
-                size="default"
-                @click="confirmEditApiUrl"
-              />
-              <el-button
-                :icon="Close"
-                size="default"
-                @click="cancelEditApiUrl"
-              />
-            </div>
-            <div class="api-url-display-group" v-else>
-              <code class="api-url-text">{{ currentApiUrl }}</code>
-              <el-button
-                :icon="Edit"
-                size="small"
-                text
-                @click="startEditApiUrl"
-                :title="$t('mcp.configCenter.editApiAddress')"
-              />
-              <el-button
-                size="small"
-                text
-                @click="resetToDefaultApiUrl"
-                :title="$t('mcp.configCenter.resetToDefault')"
-                v-if="currentApiUrl !== getMcpApiUrl()"
-              >
-                {{ $t('common.reset') }}
-              </el-button>
-            </div>
+        <div class="header-left">
+          <div class="title-section">
+            <h2 class="page-title">{{ $t('mcp.configCenter.title') }}</h2>
+            <span class="page-subtitle">{{ $t('mcp.configCenter.subtitle') }}</span>
           </div>
 
-          <el-button
-            type="primary"
-            :icon="Refresh"
-            @click="refreshConfig"
-            :loading="loading"
-            size="large"
-          >
-            {{ $t('mcp.configCenter.refreshConfig') }}
-          </el-button>
+          <!-- Expandable Actions -->
+          <transition name="slide-fade">
+            <div v-show="!headerCollapsed" class="header-actions">
+              <!-- API Address Display and Edit -->
+              <div class="api-url-section">
+                <div class="api-url-label">{{ $t('mcp.configCenter.apiAddress') }}</div>
+                <div class="api-url-input-group" v-if="isEditingApiUrl">
+                  <el-input
+                    v-model="tempApiUrl"
+                    :placeholder="defaultMcpApiUrl"
+                    size="small"
+                    class="api-url-input"
+                    @keyup.enter="confirmEditApiUrl"
+                    @keyup.esc="cancelEditApiUrl"
+                  />
+                  <el-button
+                    :icon="Check"
+                    type="success"
+                    size="small"
+                    @click="confirmEditApiUrl"
+                  />
+                  <el-button
+                    :icon="Close"
+                    size="small"
+                    @click="cancelEditApiUrl"
+                  />
+                </div>
+                <div class="api-url-display-group" v-else>
+                  <code class="api-url-text">{{ currentApiUrl }}</code>
+                  <el-button
+                    :icon="Edit"
+                    size="small"
+                    text
+                    @click="startEditApiUrl"
+                    :title="$t('mcp.configCenter.editApiAddress')"
+                  />
+                  <el-button
+                    size="small"
+                    text
+                    @click="resetToDefaultApiUrl"
+                    :title="$t('mcp.configCenter.resetToDefault')"
+                    v-if="currentApiUrl !== getMcpApiUrl()"
+                  >
+                    {{ $t('common.reset') }}
+                  </el-button>
+                </div>
+              </div>
+
+              <el-button
+                type="primary"
+                :icon="Refresh"
+                @click="refreshConfig"
+                :loading="loading"
+                size="default"
+              >
+                {{ $t('mcp.configCenter.refreshConfig') }}
+              </el-button>
+            </div>
+          </transition>
+        </div>
+
+        <!-- Toggle Button -->
+        <div class="header-toggle" @click="toggleHeaderCollapse">
+          <el-icon class="header-toggle-icon" :class="{ 'is-expanded': !headerCollapsed }">
+            <ArrowDown />
+          </el-icon>
         </div>
       </div>
     </div>
 
     <!-- Statistics Information -->
-    <div v-if="!embedded && configData" class="stats-section">
+    <div v-if="configData" class="stats-section">
       <div class="stats-grid">
         <div class="stat-card total" style="cursor: default">
           <div class="stat-icon">
@@ -82,11 +93,7 @@
             <div class="stat-label">{{ $t('mcp.configCenter.stats.totalServers') }}</div>
           </div>
         </div>
-        <div
-          class="stat-card stdio"
-          :class="{ active: activeServerType === 'stdio' }"
-          @click="handleStatCardClick('stdio')"
-        >
+        <div class="stat-card stdio">
           <div class="stat-icon">
             <el-icon><Monitor /></el-icon>
           </div>
@@ -97,11 +104,7 @@
             <div class="stat-label">{{ $t('mcp.configCenter.stats.stdioServers') }}</div>
           </div>
         </div>
-        <div
-          class="stat-card sse"
-          :class="{ active: activeServerType === 'sse' }"
-          @click="handleStatCardClick('sse')"
-        >
+        <div class="stat-card sse">
           <div class="stat-icon">
             <el-icon><Connection /></el-icon>
           </div>
@@ -113,11 +116,7 @@
           </div>
         </div>
 
-        <div
-          class="stat-card streamable"
-          :class="{ active: activeServerType === 'streamable' }"
-          @click="handleStatCardClick('streamable')"
-        >
+        <div class="stat-card streamable">
           <div class="stat-icon">
             <el-icon><Link /></el-icon>
           </div>
@@ -143,6 +142,35 @@
               {{ statisticsData?.total_tools || 0 }}
             </div>
             <div class="stat-label">{{ $t('mcp.configCenter.stats.totalTools') }}</div>
+          </div>
+        </div>
+
+        <div
+          class="stat-card external-mcp clickable"
+          @click="handleExternalMcpClick"
+          v-loading="externalMcpLoading"
+          :class="{ 'has-data': true }"
+          :title="$t('mcp.configCenter.stats.externalMcpTooltip')"
+        >
+          <div class="stat-icon">
+            <el-icon><Grid /></el-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-header">
+              <div class="stat-number" :class="{ 'clickable-number': true }">
+                {{ externalMcpData?.total_instances || 0 }}
+              </div>
+              <div class="stat-status" v-if="externalMcpData?.enabled_instances > 0">
+                <el-tag type="success" size="small" effect="light">
+                  {{ externalMcpData.enabled_instances }} {{ $t('mcp.configCenter.stats.running') }}
+                </el-tag>
+              </div>
+            </div>
+            <div class="stat-label">{{ $t('mcp.configCenter.stats.externalMcp') }}</div>
+            <div class="stat-action">
+              <el-icon><Setting /></el-icon>
+              {{ $t('mcp.configCenter.stats.clickToManage') }}
+            </div>
           </div>
         </div>
       </div>
@@ -234,6 +262,12 @@
       v-model:visible="showStatisticsDialog"
       :statistics-data="statisticsData"
     />
+
+    <!-- External MCP Management Dialog -->
+    <ExternalMcpManager
+      v-model:visible="showExternalMcpDialog"
+      @refresh="handleExternalMcpRefresh"
+    />
   </div>
 </template>
 
@@ -242,24 +276,29 @@ import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import {
+  ArrowDown,
   Check,
   Close,
   Connection,
   DataBoard,
   Edit,
+  Grid,
   Link,
   Monitor,
   Refresh,
+  Setting,
   Tools
 } from '@element-plus/icons-vue'
 import McpServerSection from '@/components/mcp/McpServerSection.vue'
 import StatisticsDialog from '@/components/dialog/StatisticsDialog.vue'
+import ExternalMcpManager from '@/components/mcp/ExternalMcpManager.vue'
 
 import {
   getMcpApiUrl,
   getMcpConfig,
   getMcpConfigWithUrl,
-  getMcpStatistics
+  getMcpStatistics,
+  getExternalMcpStatus
 } from '@/api/mcp/mcpApi'
 
 // Props
@@ -285,15 +324,20 @@ const currentApiUrl = ref(getMcpApiUrl())
 const isEditingApiUrl = ref(false)
 const tempApiUrl = ref('')
 
-// Statistics related
-const activeServerType = ref('sse')
+// Header collapse state
+const headerCollapsed = ref(true) // Default collapsed
 
 // Tool statistics data
 const statisticsData = ref(null)
 const statisticsLoading = ref(false)
 
+// External MCP data
+const externalMcpData = ref(null)
+const externalMcpLoading = ref(false)
+
 // Dialog control
 const showStatisticsDialog = ref(false)
+const showExternalMcpDialog = ref(false)
 
 // Server section references
 const stdioSectionRef = ref(null)
@@ -344,12 +388,27 @@ const fetchStatistics = async (customUrl = null) => {
   }
 }
 
+// Fetch external MCP data
+const fetchExternalMcpData = async () => {
+  try {
+    externalMcpLoading.value = true
+    externalMcpData.value = await getExternalMcpStatus()
+  } catch (error) {
+    console.error('Failed to fetch external MCP data:', error)
+    // Silent failure, as external MCP may not be configured
+    externalMcpData.value = { total_instances: 0, enabled_instances: 0 }
+  } finally {
+    externalMcpLoading.value = false
+  }
+}
+
 // Refresh configuration
 const refreshConfig = async () => {
   const customUrl = currentApiUrl.value !== getMcpApiUrl() ? currentApiUrl.value : null
   await Promise.all([
     fetchConfig(customUrl),
-    fetchStatistics(customUrl)
+    fetchStatistics(customUrl),
+    fetchExternalMcpData()
   ])
   // Reset filter status after configuration is loaded
   resetFilters()
@@ -383,9 +442,9 @@ const resetToDefaultApiUrl = () => {
   ElMessage.success(t('mcp.configCenter.messages.apiUrlReset'))
 }
 
-// Handle statistics card click
-const handleStatCardClick = (serverType) => {
-  activeServerType.value = serverType
+// Toggle header collapse
+const toggleHeaderCollapse = () => {
+  headerCollapsed.value = !headerCollapsed.value
 }
 
 // Handle tool statistics card click
@@ -393,6 +452,21 @@ const handleToolsStatClick = () => {
   if (statisticsData.value) {
     showStatisticsDialog.value = true
   }
+}
+
+// Handle external MCP card click
+const handleExternalMcpClick = () => {
+  showExternalMcpDialog.value = true
+}
+
+// Handle external MCP refresh
+const handleExternalMcpRefresh = async () => {
+  // Refresh external MCP data and main configuration, as enable/disable will affect main configuration list
+  await Promise.all([
+    fetchExternalMcpData(),
+    fetchConfig(), // Refresh main configuration to update server list
+    fetchStatistics() // Refresh statistics data
+  ])
 }
 
 // Handle add to editor
@@ -413,6 +487,7 @@ const defaultMcpApiUrl = `Please enter the complete API address, e.g.: http://12
 onMounted(() => {
   fetchConfig()
   fetchStatistics()
+  fetchExternalMcpData()
 })
 
 // Expose component methods and state to parent component
@@ -432,39 +507,66 @@ defineExpose({
   .page-header {
     background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
     color: white;
-    padding: 32px 24px;
+    padding: 20px 24px;
     margin-bottom: 24px;
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 
     .header-content {
-      margin: 0;
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
+      gap: 20px;
 
-      .title-section {
-        .page-title {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          font-size: 32px;
-          font-weight: 700;
-          margin: 0 0 8px 0;
-          background: linear-gradient(135deg, #f093fb 0%, #f5576c 30%, #4facfe 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+      .header-left {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
 
-          .title-icon {
-            font-size: 36px;
+        .title-section {
+          .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 30%, #4facfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+
+          .page-subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+            margin: 0;
           }
         }
+      }
 
-        .page-subtitle {
-          font-size: 16px;
-          opacity: 0.9;
-          margin: 0;
+      .header-toggle {
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .header-toggle-icon {
+          font-size: 18px;
+          transition: transform 0.3s ease;
+          opacity: 0.8;
+
+          &.is-expanded {
+            transform: rotate(180deg);
+          }
         }
       }
 
@@ -601,6 +703,36 @@ defineExpose({
             font-size: 14px;
             color: #666;
           }
+
+          .stat-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+
+            .stat-status {
+              .el-tag {
+                font-size: 11px;
+                padding: 2px 6px;
+                border-radius: 4px;
+              }
+            }
+          }
+
+          .stat-action {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #409eff;
+            margin-top: 6px;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+
+            .el-icon {
+              font-size: 14px;
+            }
+          }
         }
 
         &.total .stat-icon {
@@ -625,28 +757,37 @@ defineExpose({
           background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
 
+        &.external-mcp .stat-icon {
+          background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+
         &.clickable {
           position: relative;
-          
+
           &.has-data {
             cursor: pointer;
-            
+
             &:hover {
               transform: translateY(-4px);
               box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+
+              .stat-content .stat-action {
+                opacity: 1;
+                color: #66b1ff;
+              }
             }
-            
+
             &:active {
               transform: translateY(-2px);
             }
           }
-          
+
           .stat-content {
             .clickable-number {
               color: #409eff;
               cursor: pointer;
               transition: all 0.3s ease;
-              
+
               &:hover {
                 color: #66b1ff;
                 text-decoration-thickness: 2px;
@@ -733,7 +874,7 @@ defineExpose({
   .config-content {
     margin: 0;
   }
-  
+
   .proxy-info {
     margin: 20px 0 0 0;
   }
@@ -784,5 +925,21 @@ defineExpose({
       grid-template-columns: repeat(2, 1fr);
     }
   }
+}
+
+/* Slide fade transition animation */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-fade-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>

@@ -97,10 +97,10 @@ pip install -e .
 ./scripts/manage.sh ps
 
 # Test API endpoint
-curl http://localhost:9000/health
+curl http://localhost:9000/api/v1/health
 
 # View available tools
-curl http://localhost:9000/config
+curl http://localhost:9000/api/v1/config
 ```
 
 ### View Log Information
@@ -241,7 +241,7 @@ poetry install
 **Method 1:** Get configuration directly through API
 ```curl
 curl -X 'GET' \
-  'http://{mcp api ip}:9000/config?client_type=cursor&format=json' \
+  'http://{mcp api ip}:9000/api/v1/config?client_type=cursor&format=json' \
   -H 'accept: application/json'
 ```
 

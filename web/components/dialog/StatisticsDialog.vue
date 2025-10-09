@@ -55,7 +55,18 @@
                 :label="t('mcp.dialogs.statistics.toolCount')"
                 width="120"
                 align="center"
-              />
+              >
+                <template #default="{ row }">
+                  <el-button
+                    type="primary"
+                    link
+                    @click="showProjectTools(row.name)"
+                    :disabled="row.tool_count === 0"
+                  >
+                    {{ row.tool_count }}
+                  </el-button>
+                </template>
+              </el-table-column>
               <el-table-column
                 prop="author_count"
                 :label="t('mcp.dialogs.statistics.authorCount')"
@@ -83,7 +94,7 @@
                 </template>
               </el-table-column>
             </el-table>
-            
+
             <div class="pagination-container">
               <el-pagination
                 v-model:current-page="projectsCurrentPage"
@@ -111,7 +122,7 @@
                 <span class="value">{{ authorTotalTools }}</span>
               </div>
             </div>
-            
+
             <el-table
               :data="paginatedAuthors"
               border
@@ -137,7 +148,18 @@
                 min-width="120"
                 align="center"
                 sortable
-              />
+              >
+                <template #default="{ row }">
+                  <el-button
+                    type="primary"
+                    link
+                    @click="showAuthorTools(row.name)"
+                    :disabled="row.tool_count === 0"
+                  >
+                    {{ row.tool_count }}
+                  </el-button>
+                </template>
+              </el-table-column>
               <el-table-column
                 :label="t('mcp.dialogs.statistics.toolPercentage')"
                 min-width="120"
@@ -150,7 +172,7 @@
                 </template>
               </el-table-column>
             </el-table>
-            
+
             <div class="pagination-container">
               <el-pagination
                 v-model:current-page="authorsCurrentPage"
@@ -167,9 +189,16 @@
       </el-tabs>
     </div>
 
+    <!-- Tools Detail Dialog -->
+    <ToolsDetailDialog
+      v-model:visible="showToolsDetailDialog"
+      :target-type="toolsDetailType"
+      :target-name="toolsDetailTarget"
+    />
+
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">{{ t('common.close') }}</el-button>
+        <el-button @click="handleCloseClick">{{ t('common.close') }}</el-button>
       </div>
     </template>
   </el-dialog>
@@ -179,6 +208,7 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { QuestionFilled } from '@element-plus/icons-vue'
+import ToolsDetailDialog from './ToolsDetailDialog.vue'
 
 // Multi-language support
 const { t } = useI18n()
@@ -207,6 +237,11 @@ const projectsPageSize = ref(10)
 const authorsCurrentPage = ref(1)
 const authorsPageSize = ref(10)
 
+// Tools detail dialog related data
+const showToolsDetailDialog = ref(false)
+const toolsDetailType = ref('project') // 'project' or 'author'
+const toolsDetailTarget = ref('')
+
 // Computed properties
 const projectTotalTools = computed(() => {
   return props.statisticsData?.projects?.reduce((total, project) => total + project.tool_count, 0) || 0
@@ -231,9 +266,28 @@ const paginatedAuthors = computed(() => {
   return authors.slice(start, end)
 })
 
-// Handle dialog close
+// Handle dialog close from el-dialog's update:model-value event
 const handleClose = (value) => {
   emit('update:visible', value || false)
+}
+
+// Handle close button click
+const handleCloseClick = () => {
+  emit('update:visible', false)
+}
+
+// Show project tools detail
+const showProjectTools = (projectName) => {
+  toolsDetailType.value = 'project'
+  toolsDetailTarget.value = projectName
+  showToolsDetailDialog.value = true
+}
+
+// Show author tools detail
+const showAuthorTools = (authorName) => {
+  toolsDetailType.value = 'author'
+  toolsDetailTarget.value = authorName
+  showToolsDetailDialog.value = true
 }
 
 // Watch dialog visibility, reset tabs and pagination

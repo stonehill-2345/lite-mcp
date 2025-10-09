@@ -240,6 +240,21 @@ class ServerRegistry:
             if dead_servers:
                 self.save_to_file()
 
+    def batch_update_servers(self, updates: Dict[str, ServerInfo]):
+        """Batch update server information
+
+        Args:
+            updates: Mapping from server ID to new server information
+        """
+        with self._lock:
+            for server_id, new_info in updates.items():
+                if server_id in self.servers:
+                    self.servers[server_id] = new_info
+                    self.logger.debug(f"Updated server: {server_id} -> {new_info.name}")
+
+            if updates:
+                self.save_to_file()
+
     def save_to_file(self):
         """Save to file"""
         try:

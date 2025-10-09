@@ -302,40 +302,41 @@ def get_available_port_for_service(service_name: str = None, start_port: int = 8
         raise
 
 
-def get_smart_port_for_service(service_name: str, transport: str = "sse", start_port: int = 8000, max_attempts: int = 1000) -> int:
+def get_smart_port_for_service(service_name: str, transport: str = "sse", start_port: int = 8000, max_attempts: int = 1000, host: str = 'localhost') -> int:
     """
-    Smart port allocation - Prioritize using historical ports from registry (simplified version)
+    Smart port allocation - prioritize using historical ports from registry (simplified version)
 
     Allocation strategy:
-    1. First check if there is already a record for the server in the registry
-    2. If there is a record and the port is available, use the historical port
-    3. If there is a record but the port is occupied, allocate a new port (let the caller handle port cleanup)
-    4. If there is no record, allocate a new available port, avoiding ports already used in the registry
+    1. First check if there are existing records for the server in the registry
+    2. If record exists and port is available, use the historical port
+    3. If record exists but port is occupied, allocate new port (let caller handle port cleanup)
+    4. If no record exists, allocate new available port, avoiding ports already used in registry
 
     Args:
         service_name: Service name
         transport: Transport mode (sse, http, stdio)
-        start_port: Starting port number (used when allocating new ports)
+        start_port: Starting port number (used when allocating new port)
         max_attempts: Maximum number of attempts
+        host: Host to check, passed in order when not localhost
 
     Returns:
         int: Allocated port number
 
     Raises:
-        OSError: If unable to find an available port
+        OSError: If unable to find available port
 
     Examples:
         >>> port = get_smart_port_for_service("pm", "sse")
         >>> port = get_smart_port_for_service("example", "http", start_port=9000)
     """
     try:
-        # Import registry class (avoid circular imports)
+        # Import registry class (avoid circular import)
         from src.core.registry import ServerRegistry
 
         registry = ServerRegistry()
         registry.load_from_file()
 
-        # Look for historical records of the server in the registry
+        # Find historical records for this server in the registry
         existing_server = None
         existing_port = None
         latest_timestamp = None
@@ -348,12 +349,12 @@ def get_smart_port_for_service(service_name: str, transport: str = "sse", start_
                 try:
                     current_timestamp = datetime.fromisoformat(server_info.started_at.replace('Z', '+00:00'))
 
-                    # If this is the first record found, or the timestamp is more recent
+                    # If this is the first record found, or timestamp is more recent
                     if latest_timestamp is None or current_timestamp > latest_timestamp:
                         existing_server = server_info
                         existing_port = server_info.port
                         latest_timestamp = current_timestamp
-                        logger.debug(f"Found record for server '{service_name}' (port: {existing_port}, time: {server_info.started_at})")
+                        logger.debug(f"Found server '{service_name}' record (port: {existing_port}, time: {server_info.started_at})")
                 except Exception as e:
                     # If timestamp parsing fails, still use this record (fallback handling)
                     logger.warning(f"Failed to parse timestamp {server_info.started_at}: {e}")
@@ -368,14 +369,13 @@ def get_smart_port_for_service(service_name: str, transport: str = "sse", start_
 
         if existing_port:
             # Check if historical port is available
-            if is_port_available(existing_port):
+            if is_port_available(existing_port, host):
                 logger.info(f"Server '{service_name}' using historical port: {existing_port}")
                 return existing_port
             else:
-                # Port is occupied, but caller will clean up old processes, so we still return this port
-                # Let the caller handle port cleanup logic
-                logger.info(f"Historical port {existing_port} for server '{service_name}' is occupied, but will reuse this port")
-                return existing_port
+                # Port is occupied, need to allocate new port
+                logger.warning(f"Historical port {existing_port} for server '{service_name}' is occupied on {host}, will allocate new port")
+                # Continue with new port allocation logic below
 
         # No historical record, allocate new port
         logger.info(f"Server '{service_name}' has no historical record, allocating new port...")
@@ -390,11 +390,11 @@ def get_smart_port_for_service(service_name: str, transport: str = "sse", start_
 
         # Start searching from start_port, skip already used ports
         for port in range(start_port, start_port + max_attempts):
-            if port not in used_ports and is_port_available(port):
-                logger.info(f"Allocated new port for server '{service_name}': {port}")
+            if port not in used_ports and is_port_available(port, host):
+                logger.info(f"Allocated new port for server '{service_name}' on {host}: {port}")
                 return port
 
-        # If the above strategy fails, use the original port allocation logic as fallback
+        # If the above strategy fails, use original port allocation logic as fallback
         logger.warning(f"Smart port allocation failed, using standard port allocation for server '{service_name}'")
         return get_available_port(start_port, max_attempts)
 
@@ -471,11 +471,19 @@ def is_port_available(port: int, host: str = 'localhost') -> bool:
         return False
 
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            s.bind((host, port))
-            return True
-    except OSError:
+        # Use connect_ex to check if port is actually in use
+        # This is more accurate than bind() method
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(1)
+        result = s.connect_ex((host, port))
+        s.close()
+        
+        # If connection succeeds (result == 0), port is occupied
+        if result == 0:
+            return False
+        return True
+    except Exception:
+        # If any exception occurs, consider port unavailable for safety
         return False
 
 
