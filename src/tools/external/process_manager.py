@@ -15,34 +15,31 @@ import time
 import subprocess
 import sys
 import os
+import json
+import psutil
 from typing import Dict, Union, Optional
 from concurrent.futures import ThreadPoolExecutor
-
-# Optional dependencies
-try:
-    import psutil
-except ImportError:
-    psutil = None
 
 from .config_manager import external_config_manager
 from .external_mcp_server import ExternalMCPServer
 from src.core.logger import get_logger
 from src.core.registry import server_registry
+from src.core.utils import terminate_process_tree, create_process_with_group
 
 
 class ExternalMCPProcessManager:
     """External MCP Service Process Manager
-    
+
     Specifically responsible for process-level management of external MCP services:
     - Subprocess start and stop
     - Process status monitoring
     - Resource cleanup and recovery
     - Process health checks
-    
+
     Note: This is a low-level process manager that does not contain business logic such as intelligent port allocation,
     proxy registration, etc. These are handled by the upper-level ServiceManager.
     """
-    
+
     def __init__(self):
         """Initialize process manager"""
         self.logger = get_logger(__name__)
@@ -51,15 +48,15 @@ class ExternalMCPProcessManager:
         self.service_ports: Dict[str, int] = {}
         self.executor = ThreadPoolExecutor(max_workers=10)
         self._shutdown_event = threading.Event()
-    
+
     def get_running_services(self) -> Dict[str, Dict]:
         """Get all running service information
-        
+
         Returns:
             Dict[str, Dict]: Running service information
         """
         services_info = {}
-        
+
         # First get from in-memory service list
         for instance_id, server in self.running_services.items():
             instance_config = external_config_manager.get_instance(instance_id)
@@ -72,32 +69,32 @@ class ExternalMCPProcessManager:
                     "port": self.service_ports.get(instance_id),
                     "description": instance_config.get("description", "")
                 }
-        
+
         # If no services in memory, try to rebuild state from registry
         if not services_info:
             services_info = self._rebuild_services_from_registry()
-        
+
         return services_info
-    
+
     def _rebuild_services_from_registry(self) -> Dict[str, Dict]:
         """Rebuild running service state from registry
-        
+
         Returns:
             Dict[str, Dict]: Rebuilt service information
         """
         services_info = {}
-        
+
         try:
             # Get all external MCP services from registry
             all_servers = server_registry.get_all_servers()
             external_servers = {
-                server_id: server_info 
-                for server_id, server_info in all_servers.items() 
-                if (server_info.server_type == "external_mcp" or 
-                    "external-" in server_id or 
+                server_id: server_info
+                for server_id, server_info in all_servers.items()
+                if (server_info.server_type == "external_mcp" or
+                    "external-" in server_id or
                     "External MCP service:" in str(getattr(server_info, 'server_file', '')))
             }
-            
+
             # Rebuild state information for each external service
             for server_id, server_info in external_servers.items():
                 # Try to extract instance_id from server_file
@@ -109,7 +106,7 @@ class ExternalMCPProcessManager:
                         if inst_config.get("name") in server_info.name:
                             instance_id = inst_id
                             break
-                
+
                 if instance_id:
                     instance_config = external_config_manager.get_instance(instance_id)
                     if instance_config and instance_config.get("enabled", False):
@@ -121,32 +118,32 @@ class ExternalMCPProcessManager:
                             "port": server_info.port,
                             "description": instance_config.get("description", "")
                         }
-                        
+
                         # Update port mapping
                         self.service_ports[instance_id] = server_info.port
-                        
+
                         self.logger.debug(f"Rebuilt service state from registry: {instance_id} -> {server_info.name}:{server_info.port}")
-            
+
             if services_info:
                 self.logger.info(f"Rebuilt state for {len(services_info)} external MCP services from registry")
-                
+
         except Exception as e:
             self.logger.error(f"Failed to rebuild service state from registry: {e}")
-        
+
         return services_info
-    
+
     def is_service_running(self, instance_id: str) -> bool:
         """Check if service is running
-        
+
         Args:
             instance_id: Instance ID
-            
+
         Returns:
             bool: Whether running
         """
         if instance_id not in self.running_services:
             return False
-        
+
         # Check if process is still running
         if instance_id in self.service_processes:
             process = self.service_processes[instance_id]
@@ -154,26 +151,28 @@ class ExternalMCPProcessManager:
                 return process.poll() is None
             elif hasattr(process, 'is_alive'):  # Thread object
                 return process.is_alive()
-        
+
         # Fallback check: through external client
         server = self.running_services[instance_id]
         if hasattr(server, 'external_client') and server.external_client:
             return server.external_client.is_alive()
-        
+
         return False
-    
-    def start_process(self, instance_id: str, instance_config: Dict, 
-                     transport: str, host: str, port: int, proxy_url: Optional[str] = None) -> bool:
+
+    def start_process(self, instance_id: str, instance_config: Dict,
+                     transport: str, host: str, port: int, proxy_url: Optional[str] = None,
+                     register_host: Optional[str] = None) -> bool:
         """Start external MCP service process
-        
+
         Args:
             instance_id: Instance ID
             instance_config: Instance configuration
             transport: Transport protocol (stdio/http/sse)
-            host: Listen host
+            host: Listen host (binding address, can be 0.0.0.0)
             port: Listen port
             proxy_url: Proxy server URL
-            
+            register_host: Host to register to proxy (actual IP, not 0.0.0.0)
+
         Returns:
             bool: Whether startup was successful
         """
@@ -191,63 +190,122 @@ class ExternalMCPProcessManager:
                     'name': instance_config.get('name', instance_id)
                 })()
             })()
-            
+
             # Save service information
             self.running_services[instance_id] = temp_server
             self.service_ports[instance_id] = port
-            
-            # Use process instead of thread to start external MCP service, avoid blocking main process
-            # Create startup script
+
+            # Use wrapper to start external MCP service (STDIO to HTTP conversion)
+            # Create startup script using JSON serialization to avoid repr issues
             script_content = f'''
 import sys
+import os
+import subprocess
+import signal
+import time
 sys.path.insert(0, "{os.getcwd()}")
 
-# Directly use create_external_mcp_server to create server
-from src.tools.external.external_mcp_server import create_external_mcp_server
+# Import necessary modules
+from src.tools.external.external_mcp_server import ExternalMCPServer
+from src.tools.external.external_mcp_server import ExternalMCPConfig
+from src.core.utils import create_process_with_group
 import json
-import time
 
-# Recreate server instance
-instance_config = {repr(instance_config)}
-server = create_external_mcp_server("{instance_id}", instance_config, proxy_url={repr(proxy_url)})
+# Recreate configuration using JSON deserialization
+instance_config = json.loads("""{json.dumps(instance_config)}""")
 
-# Start service in background thread and then register
-import threading
+print(f"[INFO] Starting external MCP wrapper for: {{instance_config.get('name', '{instance_id}')}}")
+print(f"[INFO] External service command: {{instance_config['command']}} {{' '.join(instance_config.get('args', []))}}")
 
-def start_service():
-    if "{transport}" == "stdio":
-        server.run()
-    elif "{transport}" == "http":
-        server.run_http("{host}", {port})
+# Manually start external service process (STDIO mode) BEFORE creating server
+external_process = None
+try:
+    cmd = [instance_config["command"]] + instance_config.get("args", [])
+    env = os.environ.copy()
+    env.update(instance_config.get("env", {{}}))
+    
+    print(f"[INFO] Starting external STDIO service: {{' '.join(cmd)}}")
+    external_process = create_process_with_group(
+        cmd,
+        env=env,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    print(f"[INFO] External service started with PID: {{external_process.pid}}")
+    
+    # Create external client and set it up BEFORE creating the server
+    from src.tools.external.external_mcp_server import ExternalMCPClient, ExternalMCPConfig
+    external_config = ExternalMCPConfig(
+        name=instance_config.get("name", "{instance_id}"),
+        command=instance_config["command"],
+        args=instance_config.get("args", []),
+        env=instance_config.get("env", {{}})
+    )
+    external_client = ExternalMCPClient(external_config)
+    external_client.process = external_process
+    external_client.running = True
+    
+    # Start read/write threads manually
+    import threading
+    external_client.reader_thread = threading.Thread(target=external_client._read_responses, daemon=False)
+    external_client.writer_thread = threading.Thread(target=external_client._write_requests, daemon=False)
+    external_client.reader_thread.start()
+    external_client.writer_thread.start()
+    
+    # Initialize MCP connection to get tools list
+    print(f"[INFO] Initializing MCP connection for external service")
+    if not external_client._initialize_connection():
+        print(f"[ERROR] Failed to initialize MCP connection")
+        raise Exception("Failed to initialize MCP connection")
+    
+    print(f"[INFO] External client initialized successfully, found {{len(external_client.tools)}} tools")
+    
+    # Create wrapper server with pre-configured external client
+    server = ExternalMCPServer("{instance_id}", instance_config, proxy_url={repr(proxy_url)}, external_client=external_client)
+    
+    # Register to proxy server before starting HTTP server
+    # Use register_host (actual IP) instead of bind host (0.0.0.0)
+    register_host = "{register_host if register_host else host}"
+    register_port = {port}
+    print(f"[INFO] Registering to proxy server as {{register_host}}:{{register_port}}")
+    try:
+        server.register_service("{transport}", register_host, register_port, pid=os.getpid())
+        print(f"[INFO] Successfully registered to proxy server")
+    except Exception as reg_error:
+        print(f"[WARN] Failed to register to proxy server: {{reg_error}}")
+    
+    # Start HTTP server
+    bind_host = "{host}"
+    bind_port = {port}
+    print(f"[INFO] Starting HTTP server on {{bind_host}}:{{bind_port}}")
+    if "{transport}" == "http":
+        server.run_http(bind_host, bind_port)
     elif "{transport}" == "sse":
-        server.run_sse("{host}", {port})
+        server.run_sse(bind_host, bind_port)
     else:
         raise ValueError(f"Unsupported transport protocol: {transport}")
-
-# Start service in background thread
-service_thread = threading.Thread(target=start_service, daemon=True)
-service_thread.start()
-
-# Wait for service to be ready
-time.sleep(3)
-
-# Register the service (this will use the correct subprocess PID)
-try:
-    success = server.register_service("{transport}", "{host}", {port})
-    if success:
-        print(f"[OK] External MCP service registered: {instance_config.get('name', '{instance_id}')}")
-    else:
-        print(f"[ERROR] Failed to register external MCP service: {instance_config.get('name', '{instance_id}')}")
+        
 except Exception as e:
-    print(f"[ERROR] Registration exception: {{e}}")
-
-# Keep the main thread alive
-service_thread.join()
+    print(f"[ERROR] Failed to start external MCP wrapper: {{e}}")
+    if external_process and external_process.poll() is None:
+        external_process.terminate()
+    sys.exit(1)
+finally:
+    # Clean up external process
+    if external_process and external_process.poll() is None:
+        print(f"[INFO] Terminating external service process: {{external_process.pid}}")
+        external_process.terminate()
+        try:
+            external_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            external_process.kill()
 '''
 
-            # Start subprocess
+            # Start wrapper subprocess
             try:
-                process = subprocess.Popen(
+                process = create_process_with_group(
                     [sys.executable, "-c", script_content],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
@@ -256,11 +314,10 @@ service_thread.join()
 
                 # Save process information
                 self.service_processes[instance_id] = process
-
-                self.logger.info(f"External MCP service process started: PID {process.pid}")
+                self.logger.info(f"External MCP wrapper process started: PID {process.pid}")
 
             except Exception as e:
-                self.logger.error(f"Failed to start external MCP service process: {e}")
+                self.logger.error(f"Failed to start external MCP wrapper process: {e}")
                 self._cleanup_service(instance_id)
                 return False
 
@@ -312,9 +369,8 @@ service_thread.join()
                     self._cleanup_service(instance_id)
                     return False
 
-            # Service started successfully, subprocess will automatically register
-            self.logger.info(f"External MCP service process started successfully: {instance_name} ({transport}://{host}:{port if port else 'stdio'})")
-            self.logger.info(f"Service will auto-register with correct PID in subprocess")
+            # Service started successfully
+            self.logger.info(f"External MCP service started successfully: {instance_name} ({transport}://{host}:{port if port else 'stdio'})")
 
             return True
 
@@ -337,31 +393,40 @@ service_thread.join()
                 self.logger.warning(f"External MCP service not running: {instance_id}")
                 return True
 
-            # Stop process
+            instance_config = external_config_manager.get_instance(instance_id)
+            instance_name = instance_config.get("instance_name", instance_id) if instance_config else instance_id
+
+            # Step 1: Terminate wrapper process and all its children
             if instance_id in self.service_processes:
                 process = self.service_processes[instance_id]
                 if hasattr(process, 'terminate'):  # subprocess.Popen object
+                    self.logger.info(f"Terminating wrapper process tree for: {instance_name} (PID: {process.pid})")
+                    terminate_process_tree(process)
+
+                    # Wait for process to actually terminate
                     try:
-                        process.terminate()
-                        process.wait(timeout=5)
-                    except:
+                        process.wait(timeout=3)
+                        self.logger.info(f"Wrapper process terminated: {instance_name}")
+                    except subprocess.TimeoutExpired:
+                        self.logger.warning(f"Wrapper process did not terminate gracefully, forcing kill: {instance_name}")
                         try:
                             process.kill()
-                        except:
-                            pass
+                            process.wait(timeout=2)
+                        except Exception as kill_error:
+                            self.logger.error(f"Failed to kill wrapper process: {kill_error}")
 
-            # Stop service
+            # Step 2: Cleanup external client (this should terminate the STDIO external service)
             server = self.running_services[instance_id]
-
-            # Cleanup external client
             if hasattr(server, 'external_client') and server.external_client:
+                self.logger.info(f"Cleaning up external client for: {instance_name}")
                 server.external_client.cleanup()
 
-            # Cleanup service records
-            self._cleanup_service(instance_id)
+            # Step 3: Force cleanup any remaining processes (use command info to find stragglers)
+            if instance_config:
+                self._force_cleanup_by_command(instance_config, instance_name)
 
-            instance_config = external_config_manager.get_instance(instance_id)
-            instance_name = instance_config.get("instance_name", instance_id) if instance_config else instance_id
+            # Step 4: Cleanup service records
+            self._cleanup_service(instance_id)
 
             self.logger.info(f"External MCP service process stopped: {instance_name}")
             return True
@@ -414,11 +479,91 @@ service_thread.join()
 
         return results
 
+    def _force_cleanup_by_command(self, instance_config: Dict, instance_name: str):
+        """Force cleanup processes matching instance command
+
+        Args:
+            instance_config: Instance configuration
+            instance_name: Instance name for logging
+        """
+        try:
+            command = instance_config.get('command', '')
+            args = instance_config.get('args', [])
+
+            if not command:
+                return
+
+            # Build search pattern
+            search_patterns = [command]
+            if args:
+                # Add first argument to pattern for better matching
+                search_patterns.append(args[0] if len(args) > 0 else '')
+
+            self.logger.info(f"Searching for straggler processes matching: {command} {' '.join(args[:2])}")
+
+            # Find matching processes
+            killed_count = 0
+            for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                try:
+                    cmdline = proc.info['cmdline']
+                    if not cmdline:
+                        continue
+
+                    cmdline_str = ' '.join(cmdline)
+
+                    # Check if this process matches our command
+                    matches = all(pattern in cmdline_str for pattern in search_patterns if pattern)
+
+                    if matches:
+                        pid = proc.info['pid']
+                        self.logger.info(f"Found straggler process for {instance_name}: PID={pid}, cmd={cmdline_str[:100]}")
+
+                        # Terminate the process tree
+                        try:
+                            parent = psutil.Process(pid)
+                            # Get all children first
+                            children = parent.children(recursive=True)
+
+                            # Terminate children first
+                            for child in children:
+                                try:
+                                    child.terminate()
+                                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                                    pass
+
+                            # Terminate parent
+                            parent.terminate()
+
+                            # Wait for termination
+                            gone, alive = psutil.wait_procs(children + [parent], timeout=2)
+
+                            # Force kill any remaining
+                            for proc_to_kill in alive:
+                                try:
+                                    proc_to_kill.kill()
+                                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                                    pass
+
+                            killed_count += 1
+                            self.logger.info(f"Terminated straggler process: {pid}")
+
+                        except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                            self.logger.warning(f"Could not terminate process {pid}: {e}")
+
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+
+            if killed_count > 0:
+                self.logger.info(f"Cleaned up {killed_count} straggler process(es) for: {instance_name}")
+            else:
+                self.logger.debug(f"No straggler processes found for: {instance_name}")
+
+        except Exception as e:
+            self.logger.warning(f"Error during force cleanup by command: {e}")
+
     def _force_cleanup_external_processes(self):
         """Force cleanup external MCP processes"""
         try:
-            if psutil is None:
-                raise ImportError("psutil not available")
 
             # Find all possible external MCP processes
             external_processes = []
@@ -534,27 +679,20 @@ service_thread.join()
 
     def _cleanup_service(self, instance_id: str):
         """Cleanup service related resources
-        
+
         Args:
             instance_id: Instance ID
         """
         # Remove service records
         self.running_services.pop(instance_id, None)
         self.service_ports.pop(instance_id, None)
-        
+
         # Cleanup process/thread
         process_or_thread = self.service_processes.pop(instance_id, None)
         if process_or_thread:
             if hasattr(process_or_thread, 'terminate'):  # subprocess.Popen object
-                try:
-                    if process_or_thread.poll() is None:  # Process still running
-                        process_or_thread.terminate()
-                        process_or_thread.wait(timeout=3)
-                except:
-                    try:
-                        process_or_thread.kill()
-                    except:
-                        pass
+                if process_or_thread.poll() is None:  # Process still running
+                    terminate_process_tree(process_or_thread)
             elif hasattr(process_or_thread, 'is_alive'):  # Thread object
                 # Thread will exit automatically
                 pass

@@ -1,50 +1,53 @@
 """
-LiteMCP Utility Classes - Provides various utility functions
+LiteMCP Utilities - Provides various utility functions
 """
 import os
 import socket
 import logging
+import subprocess
+import netifaces
 from pathlib import Path
 from datetime import datetime
 
 import yaml
+import psutil
 
-# Setup logging
+# Setup logger
 logger = logging.getLogger(__name__)
 
 
 def get_project_root() -> Path:
     """
-    Get the project root directory path
+    Get project root directory path
 
-    Find the project root directory using the following strategies in priority order:
+    Find project root directory using the following strategies by priority:
     1. Search upward from current directory until finding a directory containing src and specific project markers
-    2. If not found, try to get from environment variables
-    3. If still not found, raise an exception
+    2. If not found, try to get from environment variable
+    3. If still not found, raise exception
 
     Returns:
-        Path: Path object of the project root directory
+        Path: Path object of project root directory
 
     Raises:
-        RuntimeError: If unable to determine the project root directory
+        RuntimeError: If unable to determine project root directory
 
     Examples:
         >>> root_path = get_project_root()
-        >>> print(f"Project root directory: {root_path}")
+        >>> print(f"Project root: {root_path}")
     """
-    # First check environment variables
+    # First check environment variable
     if 'LiteMCP_ROOT' in os.environ:
         root_path = Path(os.environ['LiteMCP_ROOT'])
         if _is_valid_project_root(root_path):
             return root_path
 
-    # Start searching upward from the current file's directory
+    # Search upward from current file location
     current_file = Path(__file__).resolve()
     for parent in [current_file, *current_file.parents]:
         if _is_valid_project_root(parent):
             return parent
 
-    # Start searching upward from the current working directory
+    # Search upward from current working directory
     current = Path.cwd().resolve()
     while current != current.parent:
         if _is_valid_project_root(current):
@@ -53,25 +56,25 @@ def get_project_root() -> Path:
 
     raise RuntimeError(
         "Unable to determine project root directory. Please ensure:\n"
-        "1. Current directory is within the project structure, or\n"
-        "2. Set LiteMCP_ROOT environment variable to point to the project root directory"
+        "1. Current directory is within project structure, or\n"
+        "2. Set LiteMCP_ROOT environment variable pointing to project root"
     )
 
 
 def _is_valid_project_root(path: Path) -> bool:
     """
-    Validate whether the given path is a valid project root directory
+    Validate if given path is a valid project root directory
 
-    Check criteria:
+    Validation criteria:
     1. Must contain src directory
     2. src directory must contain core and tools subdirectories
-    3. Optional: Check for other project-specific files
+    3. Optional: Check other project-specific files
 
     Args:
         path: Path to validate
 
     Returns:
-        bool: Whether it is a valid project root directory
+        bool: Whether it's a valid project root directory
     """
     if not path.is_dir():
         return False
@@ -87,13 +90,13 @@ def _is_valid_project_root(path: Path) -> bool:
     if not all(p.is_dir() for p in required_paths):
         return False
 
-    # Optional: Check for other project-specific files
+    # Optional: Check other project-specific files
     # More project-specific checks can be added here
     optional_indicators = [
-        path / 'config',  # Configuration directory
+        path / 'config',  # Config directory
         path / 'runtime',  # Runtime directory
         path / '.git',    # Git repository
-        path / 'README.md'  # Project documentation file
+        path / 'README.md'  # Project readme file
     ]
 
     # At least one optional indicator must exist
@@ -105,86 +108,85 @@ def _is_valid_project_root(path: Path) -> bool:
 
 def get_local_ip() -> str | None:
     """
-    Get the host's local area network IPv4 address
+    Get host's LAN IPv4 address
     Supports multiple environments:
-    1. Regular physical/virtual machine network environments
+    1. Normal physical/virtual machine network environment
     2. Docker container environment
     3. Kubernetes Pod environment
 
     Return strategy (by priority):
-    1. Get local IP through UDP connection
-    2. Iterate through network interfaces to get non-loopback IP
-    3. Get IP through hostname resolution
-    4. Get IP through command line tools (mainly for container environments)
+    1. Get local IP via UDP connection
+    2. Traverse network interfaces to get non-loopback IP
+    3. Get IP via hostname resolution
+    4. Get IP via command-line tools (mainly for container environment)
     5. Get IP from environment variables
 
     Returns:
-        str | None: Local area network IPv4 address, returns None if failed to obtain
+        str | None: LAN IPv4 address, returns None if failed
     """
-    # Method 1: Get through UDP connection (most commonly used method)
+    # Method 1: Get via UDP connection (most common method)
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
-            # Connect to an external address (no actual connection required)
+            # Connect to an external address (no actual connection needed)
             s.connect(('8.8.8.8', 80))
-            # Get the assigned IP
+            # Get assigned IP
             local_ip = s.getsockname()[0]
             if local_ip and not local_ip.startswith('127.'):
-                logger.debug(f"IP obtained through UDP connection: {local_ip}")
+                logger.debug(f"Got IP via UDP connection: {local_ip}")
                 return local_ip
         except Exception as e:
-            logger.warning(f"Failed to get IP by connecting to external address: {str(e)}")
+            logger.warning(f"Failed to get IP via external address connection: {str(e)}")
         finally:
             s.close()
     except Exception as e:
-        logger.warning(f"Failed to get IP through UDP socket: {str(e)}")
+        logger.warning(f"Failed to get IP via UDP socket: {str(e)}")
 
-    # Method 2: Try to iterate through all network interfaces
+    # Method 2: Try traversing all network interfaces
     try:
-        import netifaces
-        # Iterate through all network interfaces
+        # Traverse all network interfaces
         for interface in netifaces.interfaces():
             # Get IPv4 addresses
             addresses = netifaces.ifaddresses(interface).get(netifaces.AF_INET, [])
             for addr_info in addresses:
                 ip = addr_info.get('addr')
-                # Exclude loopback addresses and invalid addresses
+                # Exclude loopback and invalid addresses
                 if ip and not ip.startswith('127.') and ip != '0.0.0.0':
-                    logger.debug(f"IP obtained through network interface {interface}: {ip}")
+                    logger.debug(f"Got IP via network interface {interface}: {ip}")
                     return ip
     except ImportError:
-        logger.warning("netifaces module not installed, unable to get IP through network interfaces")
+        logger.warning("netifaces module not installed, unable to get IP via network interfaces")
     except Exception as e:
-        logger.warning(f"Failed to get IP by iterating network interfaces: {str(e)}")
+        logger.warning(f"Failed to get IP via traversing network interfaces: {str(e)}")
 
-    # Method 3: Get the address corresponding to hostname
+    # Method 3: Get address via hostname
     try:
         host_name = socket.gethostname()
         host_ip = socket.gethostbyname(host_name)
         if host_ip and not host_ip.startswith('127.'):
-            logger.debug(f"IP obtained through hostname: {host_ip}")
+            logger.debug(f"Got IP via hostname: {host_ip}")
             return host_ip
     except Exception as e:
-        logger.warning(f"Failed to get IP through hostname: {str(e)}")
+        logger.warning(f"Failed to get IP via hostname: {str(e)}")
 
-    # Method 4: If in container environment, try to find through specific network interface
+    # Method 4: If in container environment, try finding via specific network interface
     try:
         import subprocess
-        # Try to find IP address in container environment
+        # Try finding IP address in container environment
         cmd = "ip -4 addr show eth0 | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'"
         result = subprocess.check_output(cmd, shell=True).decode('utf-8').strip()
         if result and not result.startswith('127.'):
-            logger.debug(f"IP obtained through command line: {result}")
+            logger.debug(f"Got IP via command line: {result}")
             return result
     except ImportError:
-        logger.debug("subprocess module not installed, unable to get IP through command line")
+        logger.debug("subprocess module not installed, unable to get IP via command line")
     except Exception as e:
-        logger.debug(f"Failed to get IP through command line: {str(e)}")
+        logger.debug(f"Failed to get IP via command line: {str(e)}")
 
-    # Method 5: Get IP address from environment variables (fallback solution)
+    # Method 5: Get IP address from environment variables (fallback)
     try:
         import os
-        # Common environment variable names list, sorted by priority
+        # List of common environment variable names, sorted by priority
         env_var_names = [
             'EXTERNAL_IP',           # Custom environment variable
             'POD_IP',                # Kubernetes Pod IP
@@ -197,32 +199,32 @@ def get_local_ip() -> str | None:
             'SERVER_IP'              # Server IP
         ]
 
-        # Iterate through environment variables to find the first valid IP address
+        # Traverse environment variables to find first valid IP address
         for var_name in env_var_names:
             env_ip = os.environ.get(var_name)
             if env_ip and env_ip != '0.0.0.0' and env_ip != '127.0.0.1':
-                logger.debug(f"IP address obtained from environment variable {var_name}: {env_ip}")
+                logger.debug(f"Got IP address from environment variable {var_name}: {env_ip}")
                 return env_ip
     except Exception as e:
         logger.warning(f"Failed to get IP from environment variables: {str(e)}")
 
     # All methods failed, return default value
-    logger.error("Unable to get valid local area network IP address")
+    logger.error("Unable to get valid LAN IP address")
     return None
 
 
 def is_local_ip(ip: str) -> bool:
     """
-    Determine whether the given IP is a local IP
-    :param ip: IP to be determined
-    :return:
+    Check if given IP is a local IP
+    :param ip: IP to check
+    :return: True if local, False otherwise
     """
     local_ip = get_local_ip()
     local_ips = {'localhost', '127.0.0.1', '0.0.0.0'}
     if local_ip:
         local_ips.add(local_ip)
 
-    # Determine if it's a local server
+    # Check if it's a local server
     return ip in local_ips
 
 
@@ -230,18 +232,18 @@ def get_available_port(start_port: int = 8000, max_attempts: int = 100) -> int:
     """
     Get an available port number
 
-    Starting from the specified starting port, try one by one to find the first available port.
+    Starting from specified starting port, try one by one to find first available port.
     This is very useful for automatic port allocation, avoiding port conflicts.
 
     Args:
-        start_port: Starting port number, defaults to starting from 8000
+        start_port: Starting port number, defaults to 8000
         max_attempts: Maximum number of attempts, defaults to 100
 
     Returns:
         int: Available port number
 
     Raises:
-        OSError: If no available port can be found within the specified range
+        OSError: If unable to find available port within specified range
 
     Examples:
         >>> port = get_available_port()  # Start searching from 8000
@@ -250,7 +252,7 @@ def get_available_port(start_port: int = 8000, max_attempts: int = 100) -> int:
     """
     for port in range(start_port, start_port + max_attempts):
         try:
-            # Try to bind port
+            # Try binding port
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 # Set port reuse option
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -262,18 +264,18 @@ def get_available_port(start_port: int = 8000, max_attempts: int = 100) -> int:
             logger.debug(f"Port {port} is not available: {e}")
             continue
 
-    # If no available port is found, raise an exception
-    raise OSError(f"No available port found in port range {start_port}-{start_port + max_attempts - 1}")
+    # If no available port found, raise exception
+    raise OSError(f"Unable to find available port in range {start_port}-{start_port + max_attempts - 1}")
 
 
 def get_available_port_for_service(service_name: str = None, start_port: int = 8000, max_attempts: int = 1000) -> int:
     """
-    Get an available port for a service (generic version)
+    Get an available port for service (generic version)
 
-    This version no longer relies on hard-coded service port mappings, but adopts a more flexible approach:
-    1. Start searching from the specified starting port
-    2. Support large-range port search (default 1000 ports)
-    3. Service name is only used for logging and does not affect port allocation logic
+    This version no longer depends on hardcoded service port mappings, but uses a more flexible approach:
+    1. Start searching from specified starting port
+    2. Support wide range port search (default 1000 ports)
+    3. Service name only used for logging, doesn't affect port allocation logic
 
     Args:
         service_name: Service name (optional, only for logging)
@@ -284,7 +286,7 @@ def get_available_port_for_service(service_name: str = None, start_port: int = 8
         int: Available port number
 
     Raises:
-        OSError: If no available port can be found within the specified range
+        OSError: If unable to find available port within specified range
 
     Examples:
         >>> port = get_available_port_for_service("example")
@@ -405,9 +407,9 @@ def get_smart_port_for_service(service_name: str, transport: str = "sse", start_
 
 def get_available_ports(count: int, start_port: int = 8000, gap: int = 1) -> list[int]:
     """
-    Batch obtain multiple available ports
+    Batch get multiple available ports
 
-    Applicable to scenarios where multiple services need to be started simultaneously.
+    Suitable for scenarios requiring simultaneous startup of multiple services.
 
     Args:
         count: Number of ports needed
@@ -418,7 +420,7 @@ def get_available_ports(count: int, start_port: int = 8000, gap: int = 1) -> lis
         list[int]: List of available ports
 
     Raises:
-        OSError: If unable to obtain sufficient number of ports
+        OSError: If unable to get sufficient number of ports
 
     Examples:
         >>> ports = get_available_ports(3)  # Get 3 consecutive available ports
@@ -444,7 +446,7 @@ def get_available_ports(count: int, start_port: int = 8000, gap: int = 1) -> lis
         attempts += 1
 
     if len(ports) < count:
-        raise OSError(f"Unable to obtain {count} available ports, only found {len(ports)}")
+        raise OSError(f"Unable to get {count} available ports, only found {len(ports)}")
 
     logger.info(f"Batch allocated ports: {ports}")
     return ports
@@ -477,7 +479,7 @@ def is_port_available(port: int, host: str = 'localhost') -> bool:
         s.settimeout(1)
         result = s.connect_ex((host, port))
         s.close()
-        
+
         # If connection succeeds (result == 0), port is occupied
         if result == 0:
             return False
@@ -489,7 +491,7 @@ def is_port_available(port: int, host: str = 'localhost') -> bool:
 
 def read_proxy_config_from_yaml() -> tuple[str, int]:
     """
-    Read proxy server configuration from YAML configuration file
+    Read proxy server configuration from YAML config file
 
     Returns:
         tuple: (host, port) Host and port of proxy server
@@ -509,7 +511,7 @@ def read_proxy_config_from_yaml() -> tuple[str, int]:
         # Read host configuration
         host = proxy_config.get('host', 'localhost')
         if host == '0.0.0.0':
-            # If configured as 0.0.0.0, return local IP
+            # If configured as 0.0.0.0, return local machine IP
             host = get_local_ip() or 'localhost'
         elif host == 'null' or host is None:
             host = get_local_ip() or 'localhost'
@@ -524,3 +526,172 @@ def read_proxy_config_from_yaml() -> tuple[str, int]:
     except Exception as e:
         print(f"Failed to read proxy configuration: {e}")
         return "localhost", 1888  # Return default value
+
+
+def terminate_process_tree(process: subprocess.Popen, timeout: int = 5) -> bool:
+    """
+    Terminate process and all its child processes
+
+    This is a unified process termination function supporting multiple termination strategies:
+    1. Prioritize using psutil for recursive termination (most powerful)
+    2. Use system process group termination (Unix systems)
+    3. Basic terminate/kill methods (fallback)
+
+    Args:
+        process: Main process to terminate
+        timeout: Timeout for waiting process termination (seconds)
+
+    Returns:
+        bool: Whether process tree was successfully terminated
+
+    Examples:
+        >>> import subprocess
+        >>> proc = subprocess.Popen(['python', 'script.py'])
+        >>> success = terminate_process_tree(proc)
+        >>> print(f"Process termination {'successful' if success else 'failed'}")
+    """
+    if not process:
+        logger.warning("Process object is empty, no need to terminate")
+        return True
+
+    try:
+        pid = process.pid
+        logger.info(f"Starting to terminate process tree, main process PID: {pid}")
+
+        # Strategy 1: Use psutil for forceful termination (recommended)
+        if psutil:
+            try:
+                parent = psutil.Process(pid)
+                children = parent.children(recursive=True)
+
+                logger.debug(f"Found {len(children)} child processes")
+
+                # First terminate all child processes
+                for child in children:
+                    try:
+                        logger.debug(f"Terminating child process PID {child.pid}")
+                        child.terminate()
+                    except psutil.NoSuchProcess:
+                        logger.debug(f"Child process PID {child.pid} no longer exists")
+                        pass
+                    except Exception as e:
+                        logger.warning(f"Failed to terminate child process PID {child.pid}: {e}")
+
+                # Then terminate main process
+                try:
+                    logger.debug(f"Terminating main process PID {pid}")
+                    parent.terminate()
+                except psutil.NoSuchProcess:
+                    logger.debug(f"Main process PID {pid} no longer exists")
+                    return True
+                except Exception as e:
+                    logger.warning(f"Failed to terminate main process PID {pid}: {e}")
+
+                # Wait for process termination
+                try:
+                    gone, alive = psutil.wait_procs(children + [parent], timeout=timeout)
+                    logger.debug(f"Normally terminated processes: {len(gone)}, still alive: {len(alive)}")
+
+                    # Force kill still alive processes
+                    for proc in alive:
+                        try:
+                            logger.warning(f"Force killing process PID {proc.pid}")
+                            proc.kill()
+                        except psutil.NoSuchProcess:
+                            pass
+                        except Exception as e:
+                            logger.error(f"Failed to force kill process PID {proc.pid}: {e}")
+
+                    logger.info(f"Successfully terminated process tree using psutil, main process PID: {pid}")
+                    return True
+
+                except psutil.TimeoutExpired:
+                    logger.warning(f"Timeout waiting for process termination, will force kill remaining processes")
+                    # Continue with force kill logic
+
+            except psutil.NoSuchProcess:
+                logger.info(f"Process PID {pid} no longer exists")
+                return True
+            except Exception as e:
+                logger.warning(f"Failed to terminate process using psutil: {e}, falling back to system method")
+
+        # Strategy 2: Use system process group termination (Unix systems)
+        try:
+            if hasattr(os, 'killpg') and hasattr(os, 'setsid'):
+                logger.debug("Attempting to use process group termination")
+                try:
+                    # Send SIGTERM signal
+                    os.killpg(os.getpgid(pid), 15)
+                    process.wait(timeout=timeout)
+                    logger.info(f"Successfully terminated process tree using process group SIGTERM, main process PID: {pid}")
+                    return True
+                except subprocess.TimeoutExpired:
+                    logger.warning("Process group SIGTERM timeout, trying SIGKILL")
+                    try:
+                        # Send SIGKILL signal
+                        os.killpg(os.getpgid(pid), 9)
+                        logger.info(f"Successfully terminated process tree using process group SIGKILL, main process PID: {pid}")
+                        return True
+                    except Exception as e:
+                        logger.warning(f"Process group SIGKILL failed: {e}")
+                except Exception as e:
+                    logger.warning(f"Process group termination failed: {e}")
+        except Exception as e:
+            logger.debug(f"System doesn't support process group operations: {e}")
+
+        # Strategy 3: Basic terminate/kill methods (fallback)
+        logger.debug("Using basic method to terminate process")
+        try:
+            if process.poll() is None:  # Process still running
+                process.terminate()
+                try:
+                    process.wait(timeout=timeout)
+                    logger.info(f"Successfully terminated process using basic terminate, PID: {pid}")
+                    return True
+                except subprocess.TimeoutExpired:
+                    logger.warning("Basic terminate timeout, trying kill")
+                    try:
+                        process.kill()
+                        process.wait(timeout=2)  # Shorter wait time after kill
+                        logger.info(f"Successfully terminated process using basic kill, PID: {pid}")
+                        return True
+                    except Exception as e:
+                        logger.error(f"Basic kill failed: {e}")
+                        return False
+            else:
+                logger.info(f"Process PID {pid} already terminated")
+                return True
+
+        except Exception as e:
+            logger.error(f"Failed to terminate process using basic method: {e}")
+            return False
+
+    except Exception as e:
+        logger.error(f"Exception occurred while terminating process tree: {e}")
+        return False
+
+
+def create_process_with_group(cmd: list, **kwargs) -> subprocess.Popen:
+    """
+    Create child process with process group
+
+    This function ensures created process has independent process group on Unix systems,
+    facilitating subsequent process tree management.
+
+    Args:
+        cmd: Command list
+        **kwargs: Other parameters passed to subprocess.Popen
+
+    Returns:
+        subprocess.Popen: Created process object
+
+    Examples:
+        >>> proc = create_process_with_group(['python', 'script.py'])
+        >>> # Process will run in independent process group
+    """
+    # Set new process group on Unix systems
+    if hasattr(os, 'setsid'):
+        kwargs.setdefault('preexec_fn', os.setsid)
+
+    logger.debug(f"Creating child process with process group: {' '.join(cmd)}")
+    return subprocess.Popen(cmd, **kwargs)
