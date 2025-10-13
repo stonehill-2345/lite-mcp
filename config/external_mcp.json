@@ -1,0 +1,31 @@
+{
+  "instances": {
+    "4c45c2f5-0244-4399-9961-0d0c292ab281": {
+      "instance_id": "4c45c2f5-0244-4399-9961-0d0c292ab281",
+      "instance_name": "time",
+      "name": "time",
+      "template_name": "custom",
+      "enabled": false,
+      "command": "uvx",
+      "args": [
+        "mcp-server-time",
+        "--local-timezone=America/New_York"
+      ],
+      "env": {},
+      "description": "",
+      "timeout": 30,
+      "auto_restart": true,
+      "transport": "http",
+      "host": null,
+      "port": null,
+      "created_at": "2025-10-09T17:31:32.077808",
+      "updated_at": "2025-10-09T17:31:32.077816"
+    }
+  },
+  "meta": {
+    "version": "1.0.0",
+    "created": "2025-10-01",
+    "description": "User configured external MCP service instances",
+    "last_updated": "2025-10-09T17:31:32.078173"
+  }
+}

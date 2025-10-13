@@ -97,10 +97,10 @@ pip install -e .
 ./scripts/manage.sh ps
 
 # 测试API接口
-curl http://localhost:9000/health
+curl http://localhost:9000/api/v1/health
 
 # 查看可用工具
-curl http://localhost:9000/config
+curl http://localhost:9000/api/v1/config
 ```
 
 ### 查看日志信息
@@ -240,7 +240,7 @@ poetry install
 **第一种方式：** 直接通过接口获取配置
 ```curl
 curl -X 'GET' \
-  'http://{mcp api ip}:9000/config?client_type=cursor&format=json' \
+  'http://{mcp api ip}:9000/api/v1/config?client_type=cursor&format=json' \
   -H 'accept: application/json'
 ```
 

@@ -8,9 +8,43 @@
 智能助手是一个基于ReAct（Reasoning + Acting）模式的AI系统，通过深度推理和工具调用来解决复杂任务。提供了多种提示词模板和智能化功能。
 
 ## 快速开始
+### 环境配置
+```bash
+# 复制环境配置示例
+cp env.example .env
+
+# 编辑配置（可选，默认配置适用于本地开发）
+nano .env
+```
+
+### 安装和运行
 ```bash
 npm install
 npm run dev
+```
+
+### 环境变量配置
+
+前端使用环境变量管理API配置。可用变量：
+
+| 变量 | 描述 | 默认值 |
+|------|------|--------|
+| `VITE_API_BASE_URL` | 后端API服务器地址 | `http://localhost:9000` |
+| `VITE_PROXY_BASE_URL` | 代理服务器地址 | `http://localhost:1888` |
+| `VITE_API_TIMEOUT` | API请求超时时间(毫秒) | `40000` |
+| `VITE_DEBUG_MODE` | 启用调试模式 | `true` |
+
+### 构建命令
+
+```bash
+# 开发环境
+npm run dev
+
+# 生产构建
+npm run build:production
+
+# 测试环境构建  
+npm run build:staging
 ```
 
 ## 开始使用
@@ -78,10 +112,35 @@ npm run dev
 正式开始使用：
 ![UseTheAssistant.png](cn-img/UseTheAssistant.png)
 
+### 配置管理外部MCP配置
+> 如有需要可配置由npx、uvx运行的外部mcp服务统一由LiteMCP管理、启动再由proxy统一提供对外服务。
+
+以mcp-server-time为例：
+```json
+{
+  "mcpServers": {
+    "time": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-time",
+        "--local-timezone=America/New_York"
+      ]
+    }
+  }
+}
+```
+操作路径：MCP配置 -> 配置中心 -> 外部MCP服务(页面顶部右上角) -> 新建实例 -> 粘贴配置 -> 解析配置 -> 创建 -> 启用 -> 关闭外部MCP服务弹窗 -> 搜索新增mcp server配置
+![MCPSetting.png](cn-img/MCPSetting.png)
+![ConfigCenter.png](cn-img/ConfigCenter.png)
+![ExternalMCPConfig.png](cn-img/ExternalMCPConfig.png)
+![AddExternalConfig.png](cn-img/AddExternalConfig.png)
+![AddNewExternal.png](cn-img/AddNewExternal.png)
+![EnableExternal.png](cn-img/EnableExternal.png)
+![UseExternalServices.png](cn-img/UseExternalServices.png)
 
 ## 🌐 Web前端开发
 
-LiteMCP提供了现代化的Web界面，基于Vue 3 + Vite构建。
+TestMCP提供了现代化的Web界面，基于Vue 3 + Vite构建。
 
 ### 🚀 快速启动前端
 

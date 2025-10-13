@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from src.core.registry import server_registry
 from src.tools import AVAILABLE_SERVERS
 from src.controller.statistics_api import router as statistics_router
+from src.controller.external_mcp_api import external_mcp_router
 
 
 def get_proxy_host_port(proxy_host: str = "auto", proxy_port: int = 0) -> tuple[str, int]:
@@ -77,9 +78,10 @@ app.add_middleware(
 )
 
 app.include_router(statistics_router)
+app.include_router(external_mcp_router)
 
 
-@app.get("/", summary="API root path")
+@app.get("/api/v1/", summary="API root path")
 async def root():
     """API root endpoint returning basic information"""
     return {
@@ -87,15 +89,16 @@ async def root():
         "version": "1.0.0",
         "description": "Dynamically generates MCP client configurations",
         "endpoints": {
-            "config": "/config - Get detailed categorized configuration structure (default proxy mode)",
-            "config_cursor": "/config/cursor - Get Cursor available configuration (direct connection mode)",
-            "config_claude": "/config/claude - Get Claude Desktop available configuration (direct connection mode)",
-            "config_proxy": "/config/proxy - Get proxy mode configuration",
-            "config_explain": "/config/explain - Configuration mode explanation",
-            "status": "/status - Get server status",
-            "health": "/health - Health check",
-            "debug": "/debug - Debug information",
-            "statistics": "/api/v1/statistics - Statistics API"
+            "config": "/api/v1/config - Get detailed categorized configuration structure (default proxy mode)",
+            "config_cursor": "/api/v1/config/cursor - Get Cursor available configuration (direct connection mode)",
+            "config_claude": "/api/v1/config/claude - Get Claude Desktop available configuration (direct connection mode)",
+            "config_proxy": "/api/v1/config/proxy - Get proxy mode configuration",
+            "config_explain": "/api/v1/config/explain - Configuration mode explanation",
+            "status": "/api/v1/status - Get server status",
+            "health": "/api/v1/health - Health check",
+            "debug": "/api/v1/debug - Debug information",
+            "statistics": "/api/v1/statistics - Statistics API",
+            "external_mcp": "/api/v1/external-mcp - External MCP Service Management API"
         },
         "config_structure": {
             "detailed": {
@@ -141,7 +144,7 @@ async def root():
     }
 
 
-@app.get("/config", response_model=ConfigResponse, summary="Get MCP client configuration")
+@app.get("/api/v1/config", response_model=ConfigResponse, summary="Get MCP client configuration")
 async def get_mcp_config(
         client_type: str = Query(
             default="cursor",
@@ -240,13 +243,13 @@ def generate_proxy_config(client_type: str, proxy_host: str = "localhost", proxy
     # Get list of actually running servers
     running_servers = server_registry.get_all_servers()
 
-    # Generate proxy configuration based on running servers
+    # Generate proxy configuration based on actually running servers
     for server_key, server_info in running_servers.items():
         server_name = server_info.name
         server_type = server_info.server_type
         transport = server_info.transport
 
-        # Skip system servers (proxy servers, API servers)
+        # Skip system servers (proxy server, API server)
         if server_type.endswith("_server"):
             continue
 
@@ -254,8 +257,19 @@ def generate_proxy_config(client_type: str, proxy_host: str = "localhost", proxy
         server_description = ""
         if server_type in AVAILABLE_SERVERS:
             server_description = AVAILABLE_SERVERS[server_type].get("description", "")
+        elif server_type == "external_mcp":
+            # For external MCP services, use more friendly description
+            if hasattr(server_info, 'server_file') and "External MCP service:" in str(server_info.server_file):
+                external_service_name = server_info.server_file.split("External MCP service:")[1].strip()
+                server_description = f"External MCP service: {external_service_name}"
+            else:
+                server_description = f"External MCP service: {server_name}"
+
         if not server_description:
             server_description = f"{server_type} server"
+
+        # For external MCP services, use server_name instead of server_type as route and config key
+        config_key = server_name if server_type == "external_mcp" else server_type
 
         # Generate corresponding proxy configuration based on actual transport mode
         if transport == "http":
@@ -263,20 +277,20 @@ def generate_proxy_config(client_type: str, proxy_host: str = "localhost", proxy
             if client_type == "cursor":
                 http_config = {
                     "type": "streamable-http",
-                    "url": f"{mcp_server_host}/mcp/{server_type}",
+                    "url": f"{mcp_server_host}/mcp/{config_key}",
                     "description": f"{server_description} (accessed via proxy HTTP)"
                 }
             else:  # claude_desktop
                 http_config = {
                     "transport": {
                         "type": "streamable-http",
-                        "url": f"{mcp_server_host}/mcp/{server_type}"
+                        "url": f"{mcp_server_host}/mcp/{config_key}"
                     },
                     "description": f"{server_description} (accessed via proxy HTTP)"
                 }
 
             result["streamable"].append({
-                f"{server_type}-proxy-http": http_config
+                f"{config_key}-proxy-http": http_config
             })
             result["servers_count"] += 1
 
@@ -285,44 +299,47 @@ def generate_proxy_config(client_type: str, proxy_host: str = "localhost", proxy
             if client_type == "cursor":
                 sse_config = {
                     "type": "sse",
-                    "url": f"{mcp_server_host}/sse/{server_type}",
+                    "url": f"{mcp_server_host}/sse/{config_key}",
                     "description": f"{server_description} (accessed via proxy SSE)"
                 }
             else:  # claude_desktop
                 sse_config = {
                     "transport": {
                         "type": "sse",
-                        "url": f"{mcp_server_host}/sse/{server_type}"
+                        "url": f"{mcp_server_host}/sse/{config_key}"
                     },
                     "description": f"{server_description} (accessed via proxy SSE)"
                 }
 
             result["sse"].append({
-                f"{server_type}-proxy-sse": sse_config
+                f"{config_key}-proxy-sse": sse_config
             })
             result["servers_count"] += 1
 
     # Calculate total server count (including stdio)
     result["servers_count"] += len(result["stdio"])
 
-    # Generate configuration example - prioritize actually running servers
+    # Generate configuration example - include all actually running servers
+    config_example_servers = {}
+
+    # Add all SSE configurations
     if result["sse"]:
-        # Prefer SSE configuration as example
-        first_sse = result["sse"][0]
-        result["config_example"]["mcpServers"] = first_sse
-    elif result["streamable"]:
-        # If no SSE, use HTTP configuration
-        first_http = result["streamable"][0]
-        result["config_example"]["mcpServers"] = first_http
-    elif result["stdio"]:
-        # If no proxy config but stdio config exists, use stdio as example
-        first_stdio = result["stdio"][0]
-        result["config_example"]["mcpServers"] = first_stdio
+        config_example_servers.update(result["sse"][0])
+
+    # Add all HTTP configurations
+    if result["streamable"]:
+        config_example_servers.update(result["streamable"][0])
+
+    # If no proxy configuration, add stdio configuration
+    if result["stdio"]:
+        config_example_servers.update(result["stdio"][0])
+
+    result["config_example"]["mcpServers"] = config_example_servers
 
     return result
 
 
-@app.get("/config/proxy", summary="Get proxy mode configuration (shortcut)")
+@app.get("/api/v1/config/proxy", summary="Get proxy mode configuration (shortcut)")
 async def get_proxy_config(
         client_type: str = Query(
             default="cursor",
@@ -346,7 +363,7 @@ async def get_proxy_config(
     return JSONResponse(content=config_data)
 
 
-@app.get("/status", response_model=StatusResponse, summary="Get server status")
+@app.get("/api/v1/status", response_model=StatusResponse, summary="Get server status")
 async def get_status():
     """
     Get current registered server status
@@ -366,7 +383,7 @@ async def get_status():
         raise HTTPException(status_code=500, detail=f"Failed to get status: {str(e)}")
 
 
-@app.get("/health", summary="Health check")
+@app.get("/api/v1/health", summary="Health check")
 async def health_check():
     """
     API health check
@@ -411,20 +428,20 @@ def _build_actual_config(config_data: dict) -> dict:
     return actual_config
 
 
-@app.get("/config/cursor", summary="Get Cursor configuration (shortcut)")
+@app.get("/api/v1/config/cursor", summary="Get Cursor configuration (shortcut)")
 async def get_cursor_config():
     """Shortcut to get Cursor client configuration"""
     config_data = server_registry.generate_mcp_config("cursor")
     return JSONResponse(content=_build_actual_config(config_data))
 
-@app.get("/config/claude", summary="Get Claude Desktop configuration (shortcut)")
+@app.get("/api/v1/config/claude", summary="Get Claude Desktop configuration (shortcut)")
 async def get_claude_config():
     """Shortcut to get Claude Desktop client configuration"""
     config_data = server_registry.generate_mcp_config("claude_desktop")
     return JSONResponse(content=_build_actual_config(config_data))
 
 
-@app.get("/config/explain", summary="Configuration Explanation")
+@app.get("/api/v1/config/explain", summary="Configuration Explanation")
 async def explain_config():
     """
     Detailed explanation of different MCP configuration modes
@@ -488,7 +505,7 @@ async def explain_config():
     }
 
 
-@app.get("/debug", summary="Debug Information")
+@app.get("/api/v1/debug", summary="Debug Information")
 async def debug_info():
     """Debug information"""
     # Force reload
@@ -504,7 +521,7 @@ async def debug_info():
     }
 
 
-@app.post("/registry/cleanup", summary="Clean up dead processes")
+@app.post("/api/v1/registry/cleanup", summary="Clean up dead processes")
 async def cleanup_dead_servers():
     """
     Clean up stopped server processes

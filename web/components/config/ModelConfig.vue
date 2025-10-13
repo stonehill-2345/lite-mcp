@@ -307,8 +307,6 @@ const availableProviders = computed(() => {
   }))
 })
 
-// Removed availableModels, now most providers directly input model names
-
 const needsBaseUrl = computed(() => {
   return ['custom'].includes(formData.value.provider)
 })
@@ -316,8 +314,6 @@ const needsBaseUrl = computed(() => {
 const isAzureProvider = computed(() => {
   return formData.value.provider === 'azure'
 })
-
-
 
 const canTest = computed(() => {
   if (!formData.value.provider) {

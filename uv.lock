@@ -559,6 +559,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "fastmcp" },
     { name = "httpx" },
+    { name = "netifaces" },
     { name = "pillow" },
     { name = "psutil" },
     { name = "pycryptodome" },
@@ -584,6 +585,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "fastmcp", specifier = ">=2.12.0" },
     { name = "httpx", specifier = ">=0.28.0" },
+    { name = "netifaces", specifier = ">=0.11.0" },
     { name = "pillow", specifier = ">=10.4.0" },
     { name = "psutil", specifier = ">=7.0.0" },
     { name = "pycryptodome", specifier = ">=3.23.0" },
@@ -767,6 +769,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/ea/5d/38b681d3fce7a266d
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a4/8e/469e5a4a2f5855992e425f3cb33804cc07bf18d48f2db061aec61ce50270/more_itertools-10.8.0-py3-none-any.whl", hash = "sha256:52d4362373dcf7c52546bc4af9a86ee7c4579df9a8dc268be0a2f949d376cc9b", size = 69667 },
 ]
+
+[[package]]
+name = "netifaces"
+version = "0.11.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a6/91/86a6eac449ddfae239e93ffc1918cf33fd9bab35c04d1e963b311e347a73/netifaces-0.11.0.tar.gz", hash = "sha256:043a79146eb2907edf439899f262b3dfe41717d34124298ed281139a8b93ca32", size = 30106 }
 
 [[package]]
 name = "openapi-core"

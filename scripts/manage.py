@@ -19,8 +19,6 @@ sys.path.insert(0, str(project_root))
 import json
 import time
 import yaml
-import random
-import hashlib
 import psutil
 import platform
 import subprocess
@@ -36,8 +34,12 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from src.core.utils import get_smart_port_for_service, get_local_ip, is_local_ip
+from src.core.utils import get_smart_port_for_service, get_local_ip, is_local_ip, is_port_available
 from src.core.registry import ServerRegistry
+from src.tools.external.process_manager import external_process_manager
+from src.tools.external.service_manager import external_service_manager
+from src.core.registry import server_registry
+from src.core.statistics import async_update_statistics
 
 try:
     from rich.console import Console
@@ -493,66 +495,49 @@ class CrossPlatformManager:
         raise RuntimeError(f"No available port found (tried range: {start_port}-{start_port + max_attempts})")
 
     def get_smart_port_for_service(self, service_name: str, transport: str = "sse",
-                                   start_port: int = 8000, max_attempts: int = 100) -> int:
-        """Smart port allocation (calls utility function)"""
-        # First try to directly find an available port
+                                   start_port: int = 8000, max_attempts: int = 100, host: str = 'localhost') -> int:
+        """Smart port allocation (calling utility function)"""
+        # First try to get an available port directly
         try:
-            # Generate initial port based on service name hash
+            # Generate an initial port within range based on service name hash
+            import hashlib
             hash_obj = hashlib.md5(service_name.encode())
             hash_int = int.from_bytes(hash_obj.digest()[:4], byteorder='little')
             initial_port = start_port + (hash_int % 1000)
 
-            # Try sequential ports from initial port
             for offset in range(max_attempts):
                 port = initial_port + offset
-                if self._is_port_available(port):
-                    self.log_debug(f"Basic port allocation succeeded: {service_name} -> {port}")
+                if is_port_available(port):
+                    self.log_debug(f"Basic port allocation successful: {service_name} -> {port}")
                     return port
 
-            # Fallback to random port selection if sequential fails
+            # If no available port found, fallback to random range
             for _ in range(max_attempts):
+                import random
                 port = random.randint(start_port, start_port + 10000)
-                if self._is_port_available(port):
-                    self.log_debug(f"Random port allocation succeeded: {service_name} -> {port}")
+                if is_port_available(port):
+                    self.log_debug(f"Random port allocation successful: {service_name} -> {port}")
                     return port
 
-            raise RuntimeError(f"Failed to allocate port for service {service_name}")
+            raise RuntimeError(f"Unable to allocate port for service {service_name}")
 
         except Exception as first_error:
             self.log_debug(f"Basic port allocation failed: {first_error}")
 
             # Then try using utility function for port allocation
             try:
-                port = get_smart_port_for_service(service_name, transport, start_port, max_attempts)
-                if port > 0 and self._is_port_available(port):
-                    self.log_debug(f"Smart port allocation succeeded: {service_name} -> {port}")
+                port = get_smart_port_for_service(service_name, transport, start_port, max_attempts, host)
+                if port > 0 and is_port_available(port):
+                    self.log_debug(f"Smart port allocation successful: {service_name} -> {port}")
                     return port
                 else:
-                    self.log_warning(f"Smart allocated port {port} is actually unavailable, trying alternatives")
+                    self.log_warning(f"Smart allocated port {port} is actually unavailable, trying other methods")
             except Exception as e:
                 self.log_warning(f"Smart port allocation exception: {e}")
 
-            # Final fallback to simplest method
+            # Finally fallback to the simplest method
             return self.get_available_port(start_port, max_attempts)
 
-    @staticmethod
-    def _is_port_available(port: int, host: str = 'localhost') -> bool:
-        """Check if a port is available for use"""
-        # First check if any process is using this port
-        try:
-            # Attempt to check for listening processes on this port
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(1)  # Set 1 second timeout
-            result = s.connect_ex((host, port))  # Returns 0 if connection succeeds
-            s.close()
-
-            # result == 0 means connection succeeded (port is occupied)
-            if result == 0:
-                return False
-            return True
-        except Exception:
-            # On error, conservatively assume port is unavailable
-            return False
 
     def _cleanup_port_if_litemcp(self, port: int) -> bool:
         """Clean up MCP-related processes occupying the specified port"""
@@ -575,7 +560,7 @@ class CrossPlatformManager:
                                 except psutil.TimeoutExpired:
                                     proc.kill()  # Force kill if not responding
                                 time.sleep(1)  # Brief pause
-                                return self._is_port_available(port)  # Verify cleanup
+                                return is_port_available(port)  # Verify cleanup
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
             return False  # No matching process found
@@ -715,6 +700,9 @@ class CrossPlatformManager:
         if stop_monitor:
             self._stop_monitor_thread()
 
+        # Stop external MCP services
+        self._stop_external_mcp_services()
+
         processes = self.get_running_processes()
         stopped_count = 0
 
@@ -738,6 +726,12 @@ class CrossPlatformManager:
     def _cleanup_existing_servers_for_startup(self):
         """Clean up existing servers before startup (without stopping monitor thread)"""
         self.log_info("Cleaning up existing servers...")
+
+        # First stop external MCP services
+        self._stop_external_mcp_services()
+
+        # Force cleanup all external MCP related processes
+        self._force_cleanup_external_mcp_processes()
 
         processes = self.get_running_processes()
         stopped_count = 0
@@ -945,7 +939,7 @@ class CrossPlatformManager:
         if server_config.port is None or server_config.port == "null":
             try:
                 # Use server name for smart port allocation
-                port = self.get_smart_port_for_service(server_config.name, server_config.transport)
+                port = self.get_smart_port_for_service(server_config.name, server_config.transport, host=host)
             except Exception as e:
                 self.log_warning(f"Smart port allocation failed: {e}, trying default port allocation")
                 try:
@@ -962,7 +956,7 @@ class CrossPlatformManager:
             port = server_config.port
             
         # Check if port is available
-        if not self._is_port_available(port):
+        if not is_port_available(port):
             self.log_warning(f"Port {port} is already occupied, trying to automatically find available port")
             try:
                 port = self.get_available_port(port + 1, 100)
@@ -1122,7 +1116,7 @@ class CrossPlatformManager:
             self.stop_specific_server("proxy_server")
         
         # Check port availability and attempt to fix
-        if not self._is_port_available(port):
+        if not is_port_available(port):
             self.log_warning(f"Port {port} is occupied, attempting to clean up...")
             if not self._cleanup_port_if_litemcp(port):
                 # Try to use other ports
@@ -1248,7 +1242,7 @@ class CrossPlatformManager:
             port = 9000
         
         # Check port availability
-        if not self._is_port_available(port):
+        if not is_port_available(port):
             self.log_warning(f"Port {port} is occupied, attempting to clean up...")
             if not self._cleanup_port_if_litemcp(port):
                 self.log_error(f"Port {port} is occupied by other process, cannot start API server")
@@ -1300,7 +1294,7 @@ class CrossPlatformManager:
 
             while attempt <= max_attempts:
                 try:
-                    response = requests.get(f"http://{host}:{port}/health", timeout=3)
+                    response = requests.get(f"http://{host}:{port}/api/v1/health", timeout=3)
                     if response.status_code == 200:
                         self.log_success(f"[OK] API server startup successful (PID: {process.pid})")
                         self.log_info(f"   Access: http://{host}:{port}")
@@ -1873,62 +1867,97 @@ class CrossPlatformManager:
                 self.log_warning(f"Failed to get proxy status: HTTP {response.status_code}")
         except Exception as e:
             self.log_debug(f"Failed to get proxy status: {e}")
-    
+
     def _monitor_and_restart_servers(self):
         """Monitor and automatically restart servers (background thread)"""
-        # Stop the old monitor thread
+        # Stop old monitoring thread
         self._stop_monitor_thread()
-        
+
         # Create new stop event
         self._monitor_stop_event = threading.Event()
-        
+
+        # Simple failure counter
+        failure_counts = {}
+
         def monitor_loop():
+            max_failure_counts = 2
             while not self._monitor_stop_event.is_set():
                 try:
                     # Get all server configurations
                     server_configs = self.get_server_configs()
                     enabled_servers = [s for s in server_configs if s.enabled and s.auto_restart]
-                    
+
                     # Get currently running processes
                     processes = self.get_running_processes()
-                    
+
                     for server in enabled_servers:
                         # Check if need to stop
                         if self._monitor_stop_event.is_set():
                             break
-                            
-                        # Check if server needs to restart
-                        if server.name not in processes:
-                            self.log_warning(f"Detected server {server.name} has stopped, attempting to restart...")
-                            self.start_mcp_server(server)
+
+                        server_name = server.name
+
+                        # Initialize failure counter
+                        if server_name not in failure_counts:
+                            failure_counts[server_name] = 0
+
+                        # Check if server needs restart
+                        if server_name not in processes:
+                            # Check failure count
+                            if failure_counts[server_name] >= max_failure_counts:
+                                continue
+
+                            self.log_warning(f"Detected server {server_name} has stopped, attempting restart...")
+                            success = self.start_mcp_server(server)
+
+                            if success:
+                                failure_counts[server_name] = 0  # Reset failure count
+                            else:
+                                failure_counts[server_name] += 1
+                                if failure_counts[server_name] >= max_failure_counts:
+                                    self.log_error(f"Server {server_name} restart failed too many times, stopping auto-restart")
                         else:
                             # Check if process is responsive
-                            process = processes[server.name]
+                            process = processes[server_name]
                             try:
                                 if not process.is_running() or process.status() == psutil.STATUS_ZOMBIE:
-                                    self.log_warning(f"Detected unresponsive server {server.name}, attempting to restart...")
-                                    self.stop_specific_server(server.name)
+                                    # Check failure count
+                                    if failure_counts[server_name] >= max_failure_counts:
+                                        continue
+
+                                    self.log_warning(f"Detected server {server_name} is unresponsive, attempting restart...")
+                                    self.stop_specific_server(server_name)
                                     time.sleep(2)
-                                    self.start_mcp_server(server)
+                                    success = self.start_mcp_server(server)
+
+                                    if success:
+                                        failure_counts[server_name] = 0
+                                    else:
+                                        failure_counts[server_name] += 1
+                                        if failure_counts[server_name] >= max_failure_counts:
+                                            self.log_error(f"Server {server_name} restart failed too many times, stopping auto-restart")
+                                else:
+                                    # Server running normally, reset failure count
+                                    failure_counts[server_name] = 0
                             except (psutil.NoSuchProcess, psutil.AccessDenied):
                                 continue
-                    
+
                     # Use interruptible sleep
-                    for _ in range(30):  # 30 seconds, check the stop signal once per second
+                    for _ in range(30):  # 30 seconds, check stop signal every second
                         if self._monitor_stop_event.is_set():
                             break
                         time.sleep(1)
-                    
+
                 except Exception as e:
                     self.log_debug(f"Monitor loop exception: {e}")
-                    # Using interruptible sleep
-                    for _ in range(60):  # 60 seconds, check the stop signal once per second
+                    # Use interruptible sleep
+                    for _ in range(60):  # 60 seconds, check stop signal every second
                         if self._monitor_stop_event.is_set():
                             break
                         time.sleep(1)
-            
-            self.log_debug("Server monitor thread has stopped")
-        
+
+            self.log_debug("Server monitoring thread stopped")
+
         # Start monitoring thread
         self._monitor_thread = threading.Thread(target=monitor_loop, daemon=True)
         self._monitor_thread.start()
@@ -2335,6 +2364,18 @@ class CrossPlatformManager:
             self.show_section("Register MCP Servers to Proxy", self.icons['gear'])
             self.log_info(f"Registration reason: {register_reason}")
             self._auto_register_servers_to_proxy(proxy_url, target_server)
+
+        # Start external MCP servers (only when starting all servers)
+        external_services_started = False
+        if not target_server:
+            self.show_section("Starting External MCP Servers", self.icons['star'])
+            external_services_started = self._start_external_mcp_services(proxy_url)
+
+        # External MCP services will automatically register to proxy, no manual handling needed
+        if external_services_started:
+            self.log_info("External MCP services started, services will automatically register to proxy server")
+        else:
+            self.log_debug("No external MCP services started")
         
         # Start API server (only when starting all servers)
         if not target_server:
@@ -2568,7 +2609,7 @@ class CrossPlatformManager:
 
             # Check port occupancy
             if config.port:
-                if not self._is_port_available(config.port):
+                if not is_port_available(config.port):
                     # Check if occupied by other LiteMCP processes
                     if not self._cleanup_port_if_litemcp(config.port):
                         self.log_error(f"Port occupied: {config.port}")
@@ -2730,7 +2771,7 @@ class CrossPlatformManager:
         self.log_debug(f"API server configuration: host={host}, port={port}, enabled={enabled}")
         
         # Check port availability
-        if not self._is_port_available(port):
+        if not is_port_available(port):
             self.log_error(f"Port {port} is already occupied")
             return
         
@@ -2775,7 +2816,7 @@ class CrossPlatformManager:
             # Wait for startup
             time.sleep(3)
             
-            if process.poll() is None and not self._is_port_available(port):
+            if process.poll() is None and not is_port_available(port):
                 # Obtain the host address for display purposes
                 display_host = self.resolve_host_address(api_config.get('host', 'null'), 'api_server', 'display')
                 self.log_success("[OK] API server started successfully")
@@ -2834,7 +2875,7 @@ class CrossPlatformManager:
         self.log_debug(f"Proxy server configuration: host={host}, port={port}, enabled={enabled}")
         
         # Check port availability
-        if not self._is_port_available(port):
+        if not is_port_available(port):
             self.log_error(f"Port {port} is already occupied")
             return
         
@@ -2879,7 +2920,7 @@ class CrossPlatformManager:
             # Wait for startup
             time.sleep(3)
             
-            if process.poll() is None and not self._is_port_available(port):
+            if process.poll() is None and not is_port_available(port):
                 # Obtain the host address for display purposes
                 display_host = self.resolve_host_address(proxy_config.get('host', 'localhost'), 'proxy_server', 'display')
                 self.log_success("[OK] Proxy server started successfully")
@@ -2895,7 +2936,240 @@ class CrossPlatformManager:
             return False
         
         return True
-    
+
+    def _start_external_mcp_services(self, proxy_url: str = None):
+        """Start external MCP servers"""
+        try:
+            self.log_info("Starting external MCP services...")
+
+            # Use unified service manager
+            results = external_service_manager.start_all_enabled_services(proxy_url)
+
+            if not results:
+                self.log_info("No enabled external MCP services")
+                return True
+
+            success_count = sum(1 for result in results.values() if result)
+            failed_count = len(results) - success_count
+
+            if success_count > 0:
+                self.log_success(f"External MCP services started - successful: {success_count}, failed: {failed_count}")
+
+                # Show started service details
+                running_services = external_process_manager.get_running_services()
+                for instance_id, service_info in running_services.items():
+                    instance_name = service_info.get('instance_name', instance_id)
+                    port = service_info.get('port', 'unknown')
+                    self.log_info(f"  {instance_name}: port {port}")
+
+                # Async update statistics (avoid blocking startup process)
+                try:
+                    async_update_statistics(delay_seconds=5, context="after starting external MCP services")
+                except Exception as e:
+                    self.log_warning(f"Failed to start statistics update: {e}")
+
+                return True  # Some services started successfully
+            else:
+                self.log_warning("No external MCP services started successfully")
+                return False
+
+        except Exception as e:
+            self.log_error(f"Failed to start external MCP services: {e}")
+            if self.verbose:
+                traceback.print_exc()
+            return False
+
+    def _stop_external_mcp_services(self):
+        """Stop external MCP servers"""
+        try:
+            self.log_info("Stopping external MCP services...")
+
+            # Use unified service manager
+            results = external_service_manager.stop_all_services()
+
+            success_count = sum(1 for result in results.values() if result)
+
+            if success_count > 0:
+                self.log_success(f"Stopped {success_count} external MCP services")
+
+                # Async update statistics (avoid blocking stop process)
+                try:
+                    async_update_statistics(delay_seconds=2, context="after stopping external MCP services")
+                except Exception as e:
+                    self.log_warning(f"Failed to start statistics update: {e}")
+
+            elif results:
+                self.log_info("No external MCP services need to be stopped")
+            else:
+                self.log_debug("No running external MCP services found")
+
+        except Exception as e:
+            self.log_error(f"Failed to stop external MCP services: {e}")
+            if self.verbose:
+                traceback.print_exc()
+
+    def _force_cleanup_external_mcp_processes(self):
+        """Force cleanup all external MCP related processes"""
+        try:
+            self.log_debug("Force cleaning up external MCP processes...")
+
+            # Find all possible external MCP processes
+            external_processes = []
+            for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                try:
+                    cmdline = proc.info['cmdline']
+                    if cmdline and len(cmdline) > 0:
+                        cmdline_str = ' '.join(cmdline)
+                        is_external_mcp = False
+
+                        # Check if it's an external MCP related process
+                        if ('mcp-server-time' in cmdline_str or
+                                'LiteMCP-External' in cmdline_str or
+                                ('uvx' in cmdline_str and 'mcp' in cmdline_str) or
+                                'create_external_mcp_server' in cmdline_str):
+                            is_external_mcp = True
+
+                        if is_external_mcp:
+                            external_processes.append(proc.info['pid'])
+                            self.log_debug(f"Found external MCP process: {proc.info['pid']} - {cmdline_str[:100]}...")
+
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+
+            # Force stop found processes
+            cleaned_count = 0
+            for pid in external_processes:
+                try:
+                    psutil.Process(pid).terminate()
+                    cleaned_count += 1
+                    self.log_debug(f"Terminated external MCP process: {pid}")
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+
+            if cleaned_count > 0:
+                self.log_info(f"Force cleaned {cleaned_count} external MCP processes")
+                # Wait for process termination
+                time.sleep(2)
+
+        except Exception as e:
+            self.log_error(f"Failed to force cleanup external MCP processes: {e}")
+            if self.verbose:
+                traceback.print_exc()
+
+    def _register_external_mcp_services_to_proxy(self, proxy_url: str):
+        """Register external MCP services to proxy server"""
+        try:
+
+            # Wait and retry to get external MCP service information
+            max_retries = 3
+            retry_delay = 2
+            external_servers = {}
+
+            for attempt in range(max_retries):
+                # Get external MCP service information directly from registry
+                all_servers = server_registry.get_all_servers()
+                external_servers = {
+                    server_id: server_info
+                    for server_id, server_info in all_servers.items()
+                    if (server_info.server_type == "external_mcp" or
+                        "external-" in server_id or
+                        "External MCP service:" in str(getattr(server_info, 'server_file', '')))
+                }
+
+                if external_servers:
+                    break
+
+                if attempt < max_retries - 1:
+                    self.log_debug(
+                        f"No external MCP services in registry, waiting {retry_delay} seconds before retry (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(retry_delay)
+
+            if not external_servers:
+                self.log_debug("No external MCP services in registry")
+                return
+
+            self.log_info(f"Found {len(external_servers)} external MCP services need to register to proxy")
+
+            success_count = 0
+            failed_count = 0
+
+            for server_id, server_info in external_servers.items():
+                try:
+                    register_data = {
+                        "server_name": server_info.name,
+                        "host": server_info.host,
+                        "port": server_info.port,
+                        "transport": server_info.transport
+                    }
+
+                    # First check if server is already registered (idempotency check)
+                    import requests
+                    already_registered = False
+                    try:
+                        check_response = requests.get(f"{proxy_url}/proxy/status", timeout=5)
+                        if check_response.status_code == 200:
+                            status_data = check_response.json()
+                            registered_servers = status_data.get('servers', {})
+                            if server_info.name in registered_servers:
+                                existing_server = registered_servers[server_info.name]
+                                existing_host = existing_server.get('host', '')
+                                existing_port = existing_server.get('port', 0)
+                                # 检查是否是相同的服务器实例
+                                if existing_host == server_info.host and existing_port == server_info.port:
+                                    self.log_info(
+                                        f"[OK] {server_info.name} already registered in proxy, skipping duplicate registration")
+                                    already_registered = True
+                                    success_count += 1
+                                else:
+                                    self.log_info(
+                                        f"[INFO] {server_info.name} already registered but with different config, will update registration info")
+                    except Exception as e:
+                        self.log_debug(f"Failed to check external MCP service registration status: {e}")
+
+                    if already_registered:
+                        continue  # Skip already registered servers
+
+                    # Execute registration request
+                    register_url = f"{proxy_url}/proxy/register"
+                    self.log_debug(f"Sending external MCP service registration request to: {register_url}")
+
+                    try:
+                        response = requests.post(
+                            register_url,
+                            json=register_data,
+                            timeout=10,
+                            headers={'Content-Type': 'application/json'}
+                        )
+
+                        if response.status_code == 200:
+                            success_count += 1
+                            self.log_info(
+                                f"External MCP service registered successfully: {server_info.name} -> {server_info.host}:{server_info.port}")
+                        else:
+                            failed_count += 1
+                            self.log_warning(
+                                f"External MCP service registration failed: {server_info.name} (status code: {response.status_code})")
+
+                    except Exception as req_e:
+                        failed_count += 1
+                        self.log_error(
+                            f"External MCP service registration request failed: {server_info.name} - {req_e}")
+
+                except Exception as e:
+                    failed_count += 1
+                    self.log_error(f"Error registering external MCP service {server_info.name}: {e}")
+
+            if success_count > 0:
+                self.log_success(
+                    f"External MCP service registration completed - successful: {success_count}, failed: {failed_count}")
+            else:
+                self.log_warning("No external MCP services registered successfully")
+
+        except Exception as e:
+            self.log_error(f"Failed to register external MCP services to proxy: {e}")
+            if self.verbose:
+                traceback.print_exc()
+
     def diagnose_system(self):
         """System diagnostic function"""
         self.show_header("LiteMCP System Diagnosis")
@@ -2932,7 +3206,7 @@ class CrossPlatformManager:
         self.log_info("Checking port occupancy for ports 8000-8010:")
         
         for port in range(8000, 8011):
-            if self._is_port_available(port):
+            if is_port_available(port):
                 self.log_info(f"Port {port} is available")
             else:
                 self.log_warning(f"Port {port} is occupied")
@@ -3566,40 +3840,58 @@ class CrossPlatformManager:
             self.log_debug(f"Failed to determine server locality: {e}")
             # If error occurs, conservatively assume it's a local server
             return True
-    
+
     def _cleanup_local_registry_records(self):
-        """Clean up local server records in registry, keep remote server records"""
+        """Clean up local service records in registry, keep remote service records"""
         if not self.registry_file.exists():
             return
-        
+
         try:
             with open(self.registry_file, 'r', encoding='utf-8') as f:
                 content = f.read().strip()
                 if not content:
+                    # File is empty, create empty registry
                     registry = {}
                 else:
                     registry = json.loads(content)
 
             remote_servers = {}
             local_servers_count = 0
-            
+            external_mcp_count = 0
+
             for server_id, server_info in registry.items():
+                # Special handling for external MCP services - always clean up
+                if (server_info.get('server_type') == 'external_mcp' or
+                        'external-' in server_id or
+                        'external-' in server_info.get('name', '')):
+                    external_mcp_count += 1
+                    self.log_debug(
+                        f"Cleaning up external MCP service record: {server_info.get('name', 'unknown')} ({server_id})")
+                    continue
+
+                # Clean up other local services
                 if self._is_local_server(server_info):
                     local_servers_count += 1
-                    self.log_debug(f"Clean up local server record: {server_info.get('name', 'unknown')}")
+                    self.log_debug(f"Cleaning up local service record: {server_info.get('name', 'unknown')}")
                 else:
                     remote_servers[server_id] = server_info
-                    self.log_debug(f"Keep remote server record: {server_info.get('name', 'unknown')} ({server_info.get('host', 'unknown')})")
-            
+                    self.log_debug(
+                        f"Keeping remote service record: {server_info.get('name', 'unknown')} ({server_info.get('host', 'unknown')})")
+
             # Write back registry containing only remote servers
             with open(self.registry_file, 'w', encoding='utf-8') as f:
                 json.dump(remote_servers, f, indent=2, ensure_ascii=False)
-            
-            if local_servers_count > 0:
-                self.log_info(f"Cleaned up {local_servers_count} local server records, kept {len(remote_servers)} remote server records")
+
+            total_cleaned = local_servers_count + external_mcp_count
+            if total_cleaned > 0:
+                cleanup_msg = f"Cleaned up {local_servers_count} local service records"
+                if external_mcp_count > 0:
+                    cleanup_msg += f" and {external_mcp_count} external MCP service records"
+                cleanup_msg += f", kept {len(remote_servers)} remote service records"
+                self.log_info(cleanup_msg)
             elif remote_servers:
-                self.log_info(f"Kept {len(remote_servers)} remote server records")
-            
+                self.log_info(f"Kept {len(remote_servers)} remote service records")
+
         except Exception as e:
             self.log_error(f"Failed to clean up local registry records: {e}")
     

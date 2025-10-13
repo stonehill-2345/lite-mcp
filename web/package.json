@@ -5,9 +5,14 @@
   "description": "liteMCP Web Interface - 独立的智能助手Web界面",
   "scripts": {
     "dev": "vite",
+    "dev:staging": "vite --mode staging",
     "build": "vite build",
+    "build:staging": "vite build --mode staging",
+    "build:production": "vite build --mode production",
     "preview": "vite preview",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "env:setup": "cp env.example .env",
+    "env:check": "node -e \"console.log('Environment:', process.env.NODE_ENV); console.log('Mode:', process.env.VITE_MODE || 'development')\""
   },
   "dependencies": {
     "vue": "^3.2.47",

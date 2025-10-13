@@ -291,6 +291,36 @@ class MCPProxyServer:
         else:
             self.logger.debug(f"No associated sessions found to clean up for server {server_name}")
 
+    def _handle_connection_error(self, request_id: str, server_name: str, error: Exception,
+                                 context: str = "request") -> bool:
+        """Handle connection errors and determine whether to clean up sessions
+
+        Args:
+            request_id: Request ID for logging
+            server_name: Server name for session cleanup
+            error: Exception that occurred
+            context: Context description (e.g., "request", "SSE")
+
+        Returns:
+            bool: Whether sessions were cleaned up
+        """
+        # Only clean up sessions for serious network or connection issues
+        # Business logic errors like tool call failures should not cause service to be considered unavailable
+        error_str = str(error).lower()
+        network_keywords = [
+            'connection', 'network', 'timeout', 'refused', 'unreachable',
+            'peer closed', 'broken pipe', 'connection reset'
+        ]
+
+        if any(keyword in error_str for keyword in network_keywords):
+            self.logger.warning(
+                f"[{request_id}] Detected network connection issue, cleaning up sessions for server {server_name}")
+            self._cleanup_sessions_by_server(server_name, f"Network connection exception: {str(error)}")
+            return True
+        else:
+            self.logger.info(f"[{request_id}] {context} business logic error, not cleaning up sessions: {str(error)}")
+            return False
+
     async def _forward_request(self, request: Request, target_url: str, is_sse: bool = False,
                                server_name: str = None) -> Response:
         """Generic request forwarding method - Creates independent client for each request with no connection limit"""
@@ -368,12 +398,13 @@ class MCPProxyServer:
             self._cleanup_sessions_by_server(server_name, "Request timeout")
             raise HTTPException(status_code=504, detail="Request timeout")
         except Exception as e:
-            import traceback
             self.logger.error(f"[{request_id}] Request forwarding failed: {target_url}")
             self.logger.error(f"[{request_id}] Error details: {str(e)}")
             self.logger.error(f"[{request_id}] Error stack: {traceback.format_exc()}")
-            # Other exceptions may also indicate server issues, clean up sessions
-            self._cleanup_sessions_by_server(server_name, f"Request exception: {str(e)}")
+
+            # Handle connection error and determine whether to clean up sessions
+            self._handle_connection_error(request_id, server_name, e, "request")
+
             raise HTTPException(status_code=500, detail=f"Request forwarding failed: {str(e)}")
 
     async def _stream_response(self, method: str, url: str,
@@ -424,13 +455,12 @@ class MCPProxyServer:
             self._cleanup_sessions_by_server(server_name, f"SSE connection timeout: {str(e)}")
             yield f"event: error\ndata: {{\"error\": \"Connection timeout: {str(e)}\"}}\n\n"
         except Exception as e:
-            import traceback
             self.logger.error(f"[{request_id}] Stream processing failed: {url}")
             self.logger.error(f"[{request_id}] Error details: {str(e)}")
             self.logger.error(f"[{request_id}] Error stack: {traceback.format_exc()}")
 
-            # When SSE stream fails, clean up all sessions for this server
-            self._cleanup_sessions_by_server(server_name, f"SSE stream failed: {str(e)}")
+            # Handle connection error and determine whether to clean up sessions
+            self._handle_connection_error(request_id, server_name, e, "SSE")
 
             yield f"event: error\ndata: {{\"error\": \"Stream failed: {str(e)}\"}}\n\n"
 
@@ -533,6 +563,34 @@ class MCPProxyServer:
                 health_data["session_stats"]["newest_session_age"] = int(min(ages))
 
             return health_data
+
+        @app.post("/proxy/reload")
+        async def reload_servers():
+            """Reload server configuration"""
+            try:
+                old_count = len(self.server_mapping)
+                self.logger.info("Received reload request, starting to reload server configuration...")
+
+                # Clear current memory mapping
+                self.server_mapping.clear()
+
+                # Reload servers from registry
+                self._load_servers_from_registry()
+
+                new_count = len(self.server_mapping)
+                self.logger.info(f"Reload completed: {old_count} -> {new_count} servers")
+
+                return {
+                    "status": "success",
+                    "message": f"Reload completed, server count: {old_count} -> {new_count}",
+                    "servers": list(self.server_mapping.keys())
+                }
+            except Exception as e:
+                self.logger.error(f"Reload failed: {e}")
+                return {
+                    "status": "error",
+                    "message": f"Reload failed: {str(e)}"
+                }
 
         @app.post("/proxy/register")
         async def register_server(request: Request):

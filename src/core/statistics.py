@@ -5,6 +5,8 @@ Provides decorator system for collecting author information and statistics data,
 """
 import json
 import inspect
+import threading
+import time
 from datetime import datetime
 from typing import Dict, List, Optional
 from dataclasses import dataclass, asdict
@@ -27,7 +29,10 @@ class AuthorInfo:
             self.create_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         # Ensure project is in list format
         if self.project is not None and not isinstance(self.project, list):
-            self.project = [self.project]
+            if isinstance(self.project, str):
+                self.project = [self.project]
+            else:
+                self.project = [str(self.project)]
 
 
 @dataclass
@@ -41,6 +46,7 @@ class ToolInfo:
     return_type: str
     create_time: str
     author: AuthorInfo
+    server_name: str = ""
 
     def to_dict(self) -> Dict:
         return {
@@ -49,9 +55,11 @@ class ToolInfo:
             "function_name": self.function_name,
             "module": self.module,
             "params": self.params,
+            "parameters": self.params,
             "return_type": self.return_type,
             "create_time": self.create_time,
-            "author": asdict(self.author)
+            "author": asdict(self.author),
+            "server_name": self.server_name
         }
 
 
@@ -120,7 +128,8 @@ class StatisticsManager(LoggerMixin):
                             params=tool_data['params'],
                             return_type=tool_data['return_type'],
                             create_time=tool_data['create_time'],
-                            author=tool_author
+                            author=tool_author,
+                            server_name=tool_data.get('server_name', server_name)
                         )
                         tools.append(tool)
                         self.tools[tool.name] = tool
@@ -216,14 +225,14 @@ class StatisticsManager(LoggerMixin):
             outdated_servers = set(self.servers.keys()) - active_servers
             for server_name in outdated_servers:
                 del self.servers[server_name]
-                self._logger.info(f"Cleared outdated server: {server_name}")
+                # self._logger.info(f"Cleared outdated server: {server_name}")
         
         if active_tools is not None:
             # Clear tools that no longer exist
             outdated_tools = set(self.tools.keys()) - active_tools
             for tool_name in outdated_tools:
                 del self.tools[tool_name]
-                self._logger.info(f"Cleared outdated tool: {tool_name}")
+                # self._logger.info(f"Cleared outdated tool: {tool_name}")
             
             # Clear outdated tools in servers
             for server in self.servers.values():
@@ -275,7 +284,8 @@ class StatisticsManager(LoggerMixin):
             params=params,
             return_type=return_type,
             create_time=current_time,
-            author=author
+            author=author,
+            server_name=server_name
         )
         
         # Add to global tools dictionary
@@ -293,7 +303,7 @@ class StatisticsManager(LoggerMixin):
             if existing_tool_index is not None:
                 # Update existing tool
                 self.servers[server_name].tools[existing_tool_index] = tool
-                self._logger.info(f"Updated tool statistics: {server_name}.{tool_name}")
+                #self._logger.info(f"Updated tool statistics: {server_name}.{tool_name}")
             else:
                 # Add new tool
                 self.servers[server_name].tools.append(tool)
@@ -611,19 +621,21 @@ def collect_all_statistics(server_instances: list):
 
 def rebuild_all_statistics():
     """Rebuild all statistics data
-    
-    Clear existing data and re-collect statistics information for all active servers.
-    This is the ultimate method for handling severe data inconsistency issues.
+
+    Clear existing data and re-collect statistics for all active servers.
+    This is the ultimate method for handling severe data inconsistency.
     """
     try:
         # Clear all data
         statistics_manager.rebuild_statistics()
-        
-        # Re-collect statistics information for active servers
+
+        # Re-collect statistics for active servers
         from src.tools import AVAILABLE_SERVERS
         import importlib
-        
+
         server_instances = []
+
+        # 1. Collect static servers (defined in AVAILABLE_SERVERS)
         for server_name, server_config in AVAILABLE_SERVERS.items():
             try:
                 # Dynamically import module
@@ -635,16 +647,70 @@ def rebuild_all_statistics():
                 server_instances.append(server_instance)
                 statistics_manager._logger.info(f"Successfully loaded server: {server_name}")
             except Exception as e:
-                statistics_manager._logger.warning(f"Unable to load server {server_name}: {e}")
-        
-        # Collect statistics information
+                statistics_manager._logger.warning(f"Failed to load server {server_name}: {e}")
+
+        # 2. Collect external MCP servers (dynamically created)
+        try:
+            from src.tools.external.config_manager import external_config_manager
+            from src.tools.external.external_mcp_server import ExternalMCPServer
+
+            # Get all enabled external MCP instances
+            instances = external_config_manager.get_instances()
+            for instance_id, instance_config in instances.items():
+                if instance_config.get("enabled", False):
+                    try:
+                        # Create external MCP server instance for statistics collection
+                        external_server = ExternalMCPServer(
+                            instance_id=instance_id,
+                            config=instance_config,
+                            name=f"TestMCP-External-{instance_config.get('instance_name', instance_id)}"
+                        )
+                        server_instances.append(external_server)
+                        statistics_manager._logger.info(
+                            f"Successfully loaded external MCP server: {instance_config.get('instance_name', instance_id)}")
+                    except Exception as e:
+                        statistics_manager._logger.warning(f"Failed to load external MCP server {instance_id}: {e}")
+        except Exception as e:
+            statistics_manager._logger.warning(f"Error collecting external MCP servers: {e}")
+
+        # Collect statistics
         if server_instances:
             collect_all_statistics(server_instances)
         else:
             statistics_manager._logger.warning("No available server instances")
-        
+
     except Exception as e:
         statistics_manager._logger.error(f"Failed to rebuild statistics data: {e}")
+
+
+def async_update_statistics(delay_seconds: int = 3, context: str = ""):
+    """Asynchronous statistics update utility function
+
+    Args:
+        delay_seconds: Delay in seconds to wait for services to fully start/stop
+        context: Context description for logging
+    """
+
+    def delayed_update():
+        try:
+            # Wait for specified time to let services fully start/stop
+            time.sleep(delay_seconds)
+            rebuild_all_statistics()
+            statistics_manager._logger.info(f"Statistics updated automatically{f' ({context})' if context else ''}")
+        except Exception as e:
+            statistics_manager._logger.warning(
+                f"Failed to update statistics automatically{f' ({context})' if context else ''}: {e}")
+
+    try:
+        # Execute statistics update in background thread
+        stats_thread = threading.Thread(target=delayed_update, daemon=True)
+        stats_thread.start()
+        statistics_manager._logger.info(f"Statistics will be updated in background{f' ({context})' if context else ''}")
+        return True
+    except Exception as e:
+        statistics_manager._logger.warning(
+            f"Failed to start statistics update thread{f' ({context})' if context else ''}: {e}")
+        return False
 
 
 # Modified tool author information collection logic
@@ -753,5 +819,6 @@ __all__ = [
     "mcp_author",
     "collect_server_statistics",
     "collect_all_statistics",
-    "rebuild_all_statistics"
-] 
+    "rebuild_all_statistics",
+    "async_update_statistics"
+]
