@@ -40,6 +40,16 @@ mcp_servers:
     auto_restart: true
     description: "Android device interaction server"
 
+  check:
+    enabled: true
+    server_type: "check"
+    transport: "http"
+    host: null                       # Automatically gets current machine IP, externally accessible
+    port: null                       # Auto-assigned port
+    auto_restart: true
+    description: "Common detection tools"
+
+
 
 # Additional custom servers
 
