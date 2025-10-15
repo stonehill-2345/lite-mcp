@@ -858,7 +858,7 @@ class CrossPlatformManager:
             for server_id, info in registry.items():
                 if info.get('name') == server_name:
                     port = info.get('port')
-                    if port and not self._is_port_available(port):
+                    if port and not is_port_available(port):
                         self.log_info(f"Checking if port {port} is occupied by {server_name}...")
                         if self._cleanup_port_if_litemcp(port):
                             self.log_success(f"Cleaned up process on port {port}")
