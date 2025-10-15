@@ -1743,31 +1743,6 @@ class CrossPlatformManager:
                     self.log_warning(f"Server {name} is neither running locally nor in remote records, skipping")
                     continue
 
-                # Send registration request
-                # First check if server is already registered (idempotency check)
-                already_registered = False
-                try:
-                    check_response = requests.get(f"{proxy_url}/proxy/status", timeout=5)
-                    if check_response.status_code == 200:
-                        status_data = check_response.json()
-                        registered_servers = status_data.get('servers', {})
-                        if name in registered_servers:
-                            server_info = registered_servers[name]
-                            existing_host = server_info.get('host', '')
-                            existing_port = server_info.get('port', 0)
-                            # Check if it's the same server instance
-                            if existing_host == actual_host and existing_port == int(actual_port):
-                                self.log_info(f"[OK] {name} is already registered in proxy, skipping duplicate registration")
-                                already_registered = True
-                                registered_count += 1
-                            else:
-                                self.log_info(f"[INFO] {name} is already registered but with different configuration, will update registration information")
-                except Exception as e:
-                    self.log_debug(f"Failed to check server registration status: {e}")
-
-                if already_registered:
-                    continue  # Skip already registered servers
-
                 # Execute registration request (no retry mechanism to avoid duplicate requests)
                 register_url = f"{proxy_url}/proxy/register"
                 self.log_debug(f"Sending registration request to: {register_url}")
