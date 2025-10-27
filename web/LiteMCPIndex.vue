@@ -48,7 +48,7 @@ const chatConfig = ref({
   modelConfig: {
     ...DEFAULT_MODEL_CONFIG,
     provider: 'dashscope', // Default to DashScope
-    modelId: 'qwen-plus-latest',
+    modelId: 'qwen3-max',
     apiKey: '', // User needs to configure in settings
     temperature: 0.7,
     maxTokens: 8000

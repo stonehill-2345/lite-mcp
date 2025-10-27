@@ -1,0 +1,21 @@
+name: litemcp
+
+services:
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:9000}
+        - VITE_PROXY_BASE_URL=${VITE_PROXY_BASE_URL:-http://localhost:1888}
+        - VITE_DEBUG_MODE=${VITE_DEBUG_MODE:-false}
+    ports:
+      - "${FRONTEND_PORT:-2345}:80"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - frontend-network
+
+networks:
+  frontend-network:
+    driver: bridge

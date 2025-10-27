@@ -7,6 +7,24 @@ English | [中文](docs/README.zh_CN.md)
 The Intelligent Assistant is an AI system based on the ReAct (Reasoning + Acting) pattern that solves complex tasks through deep reasoning and tool invocation. It provides multiple prompt templates and intelligent functions.
 
 ## Quick Start
+
+### Prerequisites
+
+**Node.js Version Requirement**: This project requires Node.js version **16.0.0 or higher**.
+
+Check your Node.js version:
+```bash
+node --version
+```
+
+If you need to install or upgrade Node.js:
+- **Download**: [nodejs.org](https://nodejs.org/)
+- **Recommended**: Use Node.js 16 LTS or higher (18 LTS preferred for better performance)
+- **Package Managers**: 
+  - macOS: `brew install node@16` or `brew install node@18`
+  - Ubuntu/Debian: `curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash - && sudo apt-get install -y nodejs`
+  - Windows: Download from [nodejs.org](https://nodejs.org/)
+
 ### Environment Setup
 ```bash
 # Copy environment configuration
@@ -48,6 +66,46 @@ npm run build:production
 npm run build:staging
 
 ```
+
+### Deployment
+
+#### Traditional Build
+```bash
+# Build for production with custom API URLs
+VITE_API_BASE_URL=https://api.your-domain.com \
+VITE_PROXY_BASE_URL=https://proxy.your-domain.com \
+npm run build:production
+```
+
+#### Docker Deployment
+
+For Docker deployment, we recommend using the dedicated deployment scripts in the `docker` directory:
+
+```bash
+# Navigate to the docker directory
+cd ../docker
+
+# Deploy with default settings
+./deploy.sh up
+
+# Deploy with custom configuration
+FRONTEND_PORT=3000 \
+VITE_API_BASE_URL=https://api.your-domain.com \
+VITE_PROXY_BASE_URL=https://proxy.your-domain.com \
+./deploy.sh up
+
+# Or use the frontend-specific docker directory
+cd web/docker
+./deploy.sh up --environment production \
+  --api-url https://api.your-domain.com \
+  --proxy-url https://proxy.your-domain.com
+```
+
+For detailed Docker deployment instructions, see:
+- [Docker Deployment Guide](../docker/README.md) - Full stack deployment
+- [Frontend Docker Guide](docker/README.md) - Frontend-only deployment
+
+For detailed configuration guide, see [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)
 
 ## Getting Started
 
@@ -152,27 +210,7 @@ LiteMCP provides a modern web interface built on Vue 3 + Vite.
 
 ### 🚀 Quick Start Frontend
 
-#### Method One: Using Convenient Script (Recommended)
-
-```bash
-# Enter frontend directory
-cd web
-
-# Linux/macOS
-./start.sh
-
-# Windows
-start.bat
-```
-
-**Convenient script features**:
-- ✅ Automatically check Node.js environment (requires version 16+)
-- ✅ Automatically install frontend dependencies
-- ✅ Check backend service status
-- ✅ Start development server
-- ✅ Provide friendly error messages
-
-#### Method Two: Manual Start
+#### Quick Start
 
 ```bash
 # Enter frontend directory

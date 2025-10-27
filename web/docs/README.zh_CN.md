@@ -8,6 +8,24 @@
 智能助手是一个基于ReAct（Reasoning + Acting）模式的AI系统，通过深度推理和工具调用来解决复杂任务。提供了多种提示词模板和智能化功能。
 
 ## 快速开始
+
+### 环境要求
+
+**Node.js 版本要求**：本项目需要 Node.js 版本 **16.0.0 或更高**。
+
+检查您的 Node.js 版本：
+```bash
+node --version
+```
+
+如果需要安装或升级 Node.js：
+- **下载地址**：[nodejs.org](https://nodejs.org/)
+- **推荐版本**：使用 Node.js 16 LTS 或更高版本（推荐 18 LTS 以获得更好性能）
+- **包管理器安装**：
+  - macOS：`brew install node@16` 或 `brew install node@18`
+  - Ubuntu/Debian：`curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash - && sudo apt-get install -y nodejs`
+  - Windows：从 [nodejs.org](https://nodejs.org/) 下载
+
 ### 环境配置
 ```bash
 # 复制环境配置示例
@@ -22,6 +40,8 @@ nano .env
 npm install
 npm run dev
 ```
+
+访问 http://localhost:2345
 
 ### 环境变量配置
 
@@ -46,6 +66,46 @@ npm run build:production
 # 测试环境构建  
 npm run build:staging
 ```
+
+### 部署
+
+#### 传统构建部署
+```bash
+# 使用自定义API地址构建生产版本
+VITE_API_BASE_URL=https://api.your-domain.com \
+VITE_PROXY_BASE_URL=https://proxy.your-domain.com \
+npm run build:production
+```
+
+#### Docker 部署
+
+对于Docker部署，我们推荐使用`docker`目录下的专用部署脚本：
+
+```bash
+# 进入docker目录
+cd ../docker
+
+# 使用默认设置部署
+./deploy.sh up
+
+# 使用自定义配置部署
+FRONTEND_PORT=3000 \
+VITE_API_BASE_URL=https://api.your-domain.com \
+VITE_PROXY_BASE_URL=https://proxy.your-domain.com \
+./deploy.sh up
+
+# 或使用前端专用的docker目录
+cd web/docker
+./deploy.sh up --environment production \
+  --api-url https://api.your-domain.com \
+  --proxy-url https://proxy.your-domain.com
+```
+
+详细的Docker部署说明请参考：
+- [Docker部署指南](../docker/README.zh_CN.md) - 全栈部署
+- [前端Docker指南](docker/README.zh_CN.md) - 仅前端部署
+
+详细配置指南请参考 [docs/ENVIRONMENT.md](ENVIRONMENT.md) 和 [docker/README.zh_CN.md](../docker/README.zh_CN.md)
 
 ## 开始使用
 ### 配置模型
@@ -144,26 +204,7 @@ TestMCP提供了现代化的Web界面，基于Vue 3 + Vite构建。
 
 ### 🚀 快速启动前端
 
-#### 方式一：使用便捷脚本（推荐）
-
-```bash
-# 进入前端目录
-cd web
-
-# Linux/macOS
-./start.sh
-
-# Windows
-start.bat
-```
-**便捷脚本功能**：
-- ✅ 自动检查Node.js环境（需要16+版本）
-- ✅ 自动安装前端依赖
-- ✅ 检查后端服务状态
-- ✅ 启动开发服务器
-- ✅ 提供友好的错误提示
-
-#### 方式二：手动启动
+#### 快速启动
 
 ```bash
 # 进入前端目录

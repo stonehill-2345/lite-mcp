@@ -2,7 +2,11 @@
   "name": "litemcp-web",
   "version": "1.0.0",
   "type": "module",
-  "description": "liteMCP Web Interface - 独立的智能助手Web界面",
+  "description": "liteMCP Web Interface - Web intelligent assistant",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=7.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "dev:staging": "vite --mode staging",

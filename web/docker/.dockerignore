@@ -1,0 +1,62 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist
+build
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker files (but keep docker/ directory for nginx.conf)
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Documentation
+README.md
+docs/
+
+# Test files
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Coverage reports
+coverage/
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary folders
+tmp/
+temp/
