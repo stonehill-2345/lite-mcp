@@ -27,7 +27,7 @@ export const MODEL_CONFIGS = {
       'Authorization': 'Bearer {apiKey}'
     },
     supportsFunctions: true,
-    defaultModel: 'qwen-plus-latest'
+    defaultModel: 'qwen3-max'
   },
 
   // Custom Model Configuration (OpenAI API compatible)
@@ -46,7 +46,7 @@ export const MODEL_CONFIGS = {
 // Default Model Configuration
 export const DEFAULT_MODEL_CONFIG = {
   provider: 'dashscope', // Default to DashScope
-  modelId: 'qwen-plus-latest',
+  modelId: 'qwen3-max',
   temperature: 0.7,
   maxTokens: 8000, // Updated output token limit (increased from 4000 to 8000)
   maxContextTokens: 500000, // Updated context window size (increased from 120000 to 500000, leaving enough space for GPT-4.1 Mini's 1M tokens)

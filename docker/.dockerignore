@@ -1,0 +1,78 @@
+# Backend Docker ignore file
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Runtime files (will be created in container)
+runtime/logs/*
+runtime/pids/*
+runtime/registry.json
+runtime/registry.lock
+runtime/statistics.json
+
+# Test files
+tests/
+*.test.py
+*.spec.py
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+
+# Documentation
+docs/
+*.md
+!docker/README*.md
+
+# Web frontend (separate container)
+web/
+
+# Logs
+*.log
+server.log
+
+# Temporary files
+tmp/
+temp/
+.tmp/

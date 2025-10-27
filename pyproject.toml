@@ -33,6 +33,10 @@ dev = [
     "pytest-asyncio>=0.21.0",
 ]
 
+[tool.uv]
+index-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+extra-index-url = ["https://mirrors.aliyun.com/pypi/simple/", "https://pypi.org/simple"]
+
 [project.scripts]
 litemcp = "src.cli:main"
 
@@ -54,7 +58,7 @@ python = "^3.12"
 fastmcp = "^2.12.0"
 click = "^8.1.0"
 rich = "^14.0.0"
-fastapi = "^0.115.0"
+fastapi = ">=0.115.0"
 uvicorn = "^0.34.0"
 psutil = "^7.0.0"
 httpx = "^0.28.0"

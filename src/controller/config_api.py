@@ -217,7 +217,8 @@ def generate_proxy_config(client_type: str, proxy_host: str = "localhost", proxy
         Proxy configuration data
     """
 
-    mcp_server_host = "http://127.0.0.1:1888"
+    # Get MCP server host from environment variable, fallback to default
+    mcp_server_host = os.getenv("MCP_SERVER_HOST", f"http://{proxy_host}:{proxy_port}")
 
     result = {
         "client_type": client_type,

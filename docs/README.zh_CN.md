@@ -90,6 +90,31 @@ pip install -e .
 ./scripts/manage.sh up
 ```
 
+#### 方式四：使用 Docker（快速部署）
+
+适合偏好容器化部署或希望快速体验系统的用户：
+
+```bash
+# 克隆项目
+git clone https://github.com/stonehill-2345/lite-mcp.git
+cd lite-mcp
+
+# 使用Docker部署（一键部署）
+cd docker
+./deploy.sh up
+
+# 或使用自定义配置
+FRONTEND_PORT=3000 ./deploy.sh up
+```
+
+**Docker部署特性：**
+- ✅ **一键部署**：完整的后端+前端技术栈
+- ✅ **自动配置**：无需手动配置环境
+- ✅ **隔离环境**：与现有Python/Node.js安装无冲突
+- ✅ **生产就绪**：包含nginx、健康检查和网络配置
+
+详细的Docker部署说明请参考 [Docker部署指南](docker/README.zh_CN.md)。
+
 #### ⚡ 快速验证
 
 ```bash
@@ -195,7 +220,7 @@ poetry install
 ./scripts/manage.sh unregister --proxy-url <proxy_ip:1888>
 ```
 > 需要注意：注册到远程代理服务主要适用于类似Jenkins的 多salve、一个master的模式，注册到远程代理时，如果远程代理也启动这个服务则会覆盖代注册服务信息。
-!![RemoteServer.png](RemoteServer.png)
+!![RemoteServer.png](RemoteServerCN.png)
 
 > 剩余非核心参数用法可使用 `./scripts/manage.sh help` 自行发掘。
 

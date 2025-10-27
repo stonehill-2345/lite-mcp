@@ -90,6 +90,31 @@ pip install -e .
 ./scripts/manage.sh up
 ```
 
+#### Method 4: Using Docker (Quick Deployment)
+
+For users who prefer containerized deployment or want to quickly test the system:
+
+```bash
+# Clone the project
+git clone https://github.com/stonehill-2345/lite-mcp.git
+cd lite-mcp
+
+# Deploy with Docker (one-command deployment)
+cd docker
+./deploy.sh up
+
+# Or with custom configuration
+FRONTEND_PORT=3000 ./deploy.sh up
+```
+
+**Docker Deployment Features:**
+- ✅ **One-command deployment**: Complete backend + frontend stack
+- ✅ **Automatic configuration**: No manual environment setup required
+- ✅ **Isolated environment**: No conflicts with existing Python/Node.js installations
+- ✅ **Production-ready**: Includes nginx, health checks, and proper networking
+
+For detailed Docker deployment instructions, see [Docker Deployment Guide](docker/README.md).
+
 #### ⚡ Quick Verification
 
 ```bash

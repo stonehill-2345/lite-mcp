@@ -234,7 +234,7 @@ class CrossPlatformManager:
             panel_title = f"[bold white]{title}[/bold white]"
             if subtitle:
                 panel_title += f"\n[dim]{subtitle}[/dim]"
-            
+
             panel = Panel(
                 panel_title,
                 border_style="cyan",
@@ -251,7 +251,7 @@ class CrossPlatformManager:
                 print(f"{self.colors['cyan']}│{' ' * ((width - len(subtitle)) // 2)}{subtitle}{' ' * ((width - len(subtitle)) // 2)}│{self.colors['reset']}")
             print(f"{self.colors['cyan']}{self.colors['bold']}{'─' * width}{self.colors['reset']}")
             print()
-    
+
     def show_section(self, title: str, icon: str):
         """Display chapter titles"""
         if RICH_AVAILABLE:
@@ -906,7 +906,7 @@ class CrossPlatformManager:
         """Start a single MCP server"""
         log_file = self.log_dir / f"{server_config.name}.log"
         pid_file = self.pid_dir / f"{server_config.name}.pid"
-        
+
         # 1. Check if this service is already running
         processes = self.get_running_processes()
         if server_config.name in processes:
@@ -918,23 +918,23 @@ class CrossPlatformManager:
                     return True
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
-                
+
             # Process exists but is unresponsive, stop it
             self.log_warning(f"Detected unresponsive {server_config.name} process, restarting...")
             self.stop_specific_server(server_config.name)
-        
+
         # Clean up potentially existing old PID files
         if pid_file.exists():
             pid_file.unlink()
-        
+
         # Clean up old records in registry
         self._cleanup_registry_for_server(server_config.name)
-        
+
         self.log_info(f"Starting MCP server: {server_config.name} ({server_config.server_type})")
-        
+
         # Resolve host address
         host = self.resolve_host_address(server_config.host, server_config.name, "ip")
-        
+
         # Smart port allocation - prioritize port settings from config file
         if server_config.port is None or server_config.port == "null":
             try:
@@ -954,7 +954,7 @@ class CrossPlatformManager:
                     return False
         else:
             port = server_config.port
-            
+
         # Check if port is available
         if not is_port_available(port):
             self.log_warning(f"Port {port} is already occupied, trying to automatically find available port")
@@ -964,7 +964,7 @@ class CrossPlatformManager:
             except Exception as e:
                 self.log_error(f"Unable to find available port: {e}")
                 return False
-            
+
         # Build startup command
         cmd = [
             "src/cli.py",
@@ -974,7 +974,7 @@ class CrossPlatformManager:
             "--host", host,
             "--port", str(port)
         ]
-        
+
         # Start server process
         try:
             result = self.run_python(
@@ -982,16 +982,16 @@ class CrossPlatformManager:
                 stdout=log_file.open("a"),
                 stderr=log_file.open("a")
             )
-            
+
             # Waiting for the server to start
             time.sleep(3)
-            
+
             # Check if the process started successfully
             if result.poll() is None:
                 # Save PID file
                 with open(pid_file, 'w') as f:
                     f.write(str(result.pid))
-                
+
                 self.log_success(f"[OK] {server_config.name} startup successful")
                 self.log_info(f"  PID: {result.pid}")
                 self.log_info(f"  Port: {port}")
@@ -1020,7 +1020,7 @@ class CrossPlatformManager:
                             actual_port = int(cmdline[port_idx:].split()[0])
                         except:
                             pass
-                    
+
                     actual_host = host
                     if "--host" in cmdline:
                         host_idx = cmdline.find("--host") + len("--host")
@@ -1028,7 +1028,7 @@ class CrossPlatformManager:
                             actual_host = cmdline[host_idx:].split()[0]
                         except:
                             pass
-                            
+
                     self.log_success(f"[OK] {server_config.name} started (PID: {new_processes[server_config.name].pid})")
                     self.log_info(f"  Port: {actual_port}")
                     # Build correct access URL based on transport mode
@@ -1040,48 +1040,48 @@ class CrossPlatformManager:
                         access_url = f"http://{actual_host}:{actual_port}"
                     self.log_info(f"  Access URL: {access_url}")
                     return True
-                
+
                 self.log_error(f"[X] {server_config.name} startup failed")
                 self.log_info(f"Please check log file: {log_file}")
                 return False
-            
+
         except Exception as e:
             self.log_error(f"[X] {server_config.name} startup error, please check logs")
             self.log_debug(f"Error details: {e}")
-            
+
             # Check if service was started by other means
             new_processes = self.get_running_processes()
             if server_config.name in new_processes:
                 self.log_success(f"[OK] {server_config.name} started (PID: {new_processes[server_config.name].pid})")
                 return True
-                
+
             return False
-    
+
     def _start_proxy_server_enhanced(self) -> bool:
         """Start proxy server"""
         config = self.load_config()
         proxy_config = config.get('proxy_server', {})
-        
+
         # Handle enabled configuration
         enabled_value = proxy_config.get('enabled', True)
         if isinstance(enabled_value, str):
             enabled = enabled_value.lower() in ('true', 'yes', '1', 'on')
         else:
             enabled = bool(enabled_value)
-        
+
         if not enabled:
             self.log_info("Proxy server is disabled in configuration, skipping startup")
             return False
-        
+
         self.log_step("Starting proxy server", "", "")
-        
+
         # Get host and port configuration first
         host = self.resolve_host_address(
-            proxy_config.get('host', 'localhost'), 
-            'proxy_server', 
+            proxy_config.get('host', 'localhost'),
+            'proxy_server',
             'localhost'
         )
-        
+
         # Process port configuration
         port_value = proxy_config.get('port', 1888)
         try:
@@ -1107,14 +1107,14 @@ class CrossPlatformManager:
                         pass
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
-            
+
             # Proxy server process exists but is unresponsive, stop it
             self.log_info("Detected unresponsive proxy server process, restarting...")
             self.stop_specific_server("proxy_server")
         else:
             # Stop potentially running proxy server
             self.stop_specific_server("proxy_server")
-        
+
         # Check port availability and attempt to fix
         if not is_port_available(port):
             self.log_warning(f"Port {port} is occupied, attempting to clean up...")
@@ -1127,22 +1127,22 @@ class CrossPlatformManager:
                 except Exception:
                     self.log_error(f"Port {port} is occupied by other process, cannot start proxy server")
                     return False
-        
+
         # Start proxy server
         log_file = self.log_dir / "proxy_server.log"
         pid_file = self.pid_dir / "proxy_server.pid"
-        
+
         cmd_base = [
             sys.executable, "src/cli.py", "proxy",
             "--host", host,
             "--port", str(port)
         ]
-        
+
         if self.use_poetry:
             cmd = ["poetry", "run"] + cmd_base
         else:
             cmd = cmd_base
-        
+
         try:
             with open(log_file, 'a', encoding='utf-8') as f:
                 if self.is_windows:
@@ -1161,7 +1161,7 @@ class CrossPlatformManager:
                         stderr=subprocess.STDOUT,
                         preexec_fn=os.setsid
                     )
-            
+
             # Save PID
             with open(pid_file, 'w') as f:
                 f.write(str(process.pid))
@@ -1169,13 +1169,13 @@ class CrossPlatformManager:
             # Wait for startup
             for attempt in range(5):
                 time.sleep(1)
-                
+
                 # Check if the process is still running
                 if process.poll() is not None:
                     self.log_error("[X] Proxy server startup failed, process exited")
                     return False
-                
-                # Try to detect if service started via port    
+
+                # Try to detect if service started via port
                 try:
                     with socket.socket() as s:
                         s.settimeout(1)
@@ -1189,7 +1189,7 @@ class CrossPlatformManager:
                             return True
                 except:
                     pass
-            
+
             # Try to confirm service startup by other means
             if process.poll() is None:
                 # Process still running, service may be started but our detection method has issues
@@ -1201,7 +1201,7 @@ class CrossPlatformManager:
             else:
                 self.log_error("[X] Proxy server startup failed")
                 return False
-                
+
         except Exception as e:
             self.log_error(f"Proxy server startup failed: {e}")
             return False
@@ -1210,59 +1210,59 @@ class CrossPlatformManager:
         """Start API server"""
         config = self.load_config()
         api_config = config.get('api_server', {})
-        
+
         # Handle enabled configuration
         enabled_value = api_config.get('enabled', True)
         if isinstance(enabled_value, str):
             enabled = enabled_value.lower() in ('true', 'yes', '1', 'on')
         else:
             enabled = bool(enabled_value)
-        
+
         if not enabled:
             self.log_info("API server is disabled in configuration, skipping startup")
             return False
-        
+
         self.log_step("Starting API server", "", "")
-        
+
         # Stop potentially running API server
         self.stop_specific_server("api_server")
 
         api_host = api_config.get('host', 'null')
         host = self.resolve_host_address(
             api_host if api_host else 'null',
-            'api_server', 
+            'api_server',
             'ip'
         )
-        
+
         # Process port configuration
         port_value = api_config.get('port', 9000)
         try:
             port = int(port_value)
         except (ValueError, TypeError):
             port = 9000
-        
+
         # Check port availability
         if not is_port_available(port):
             self.log_warning(f"Port {port} is occupied, attempting to clean up...")
             if not self._cleanup_port_if_litemcp(port):
                 self.log_error(f"Port {port} is occupied by other process, cannot start API server")
                 return False
-        
+
         # Start API server
         log_file = self.log_dir / "api_server.log"
         pid_file = self.pid_dir / "api_server.pid"
-        
+
         cmd_base = [
             sys.executable, "src/cli.py", "api",
             "--host", host,
             "--port", str(port)
         ]
-        
+
         if self.use_poetry:
             cmd = ["poetry", "run"] + cmd_base
         else:
             cmd = cmd_base
-        
+
         try:
             with open(log_file, 'w', encoding='utf-8') as f:
                 if self.is_windows:
@@ -1281,11 +1281,11 @@ class CrossPlatformManager:
                         stderr=subprocess.STDOUT,
                         preexec_fn=os.setsid
                     )
-            
+
             # Save PID
             with open(pid_file, 'w') as f:
                 f.write(str(process.pid))
-            
+
             # Waiting to start and undergo health check
             time.sleep(5)
             max_attempts = 6
@@ -1302,14 +1302,14 @@ class CrossPlatformManager:
                         return True
                 except:
                     pass
-                
+
                 self.log_debug(f"Waiting for API server startup... (attempt {attempt}/{max_attempts})")
                 time.sleep(3)
                 attempt += 1
-            
+
             self.log_error("[X] API server startup failed or health check failed")
             return False
-                
+
         except Exception as e:
             self.log_error(f"Failed to start API server: {e}")
             return False
@@ -1318,7 +1318,7 @@ class CrossPlatformManager:
         """Automatically unregister MCP servers from proxy"""
         config = self.load_config()
         proxy_config = config.get('proxy_server', {})
-        
+
         # If using a custom proxy URL, skip the local proxy configuration check
         if not custom_proxy_url:
             # Check if the proxy server is enabled
@@ -1327,7 +1327,7 @@ class CrossPlatformManager:
                 enabled = enabled_value.lower() in ('true', 'yes', '1', 'on')
             else:
                 enabled = bool(enabled_value)
-            
+
             if not enabled:
                 self.log_info("Proxy server not enabled, skipping automatic unregistration")
                 return
@@ -1341,18 +1341,18 @@ class CrossPlatformManager:
         else:
             # Use the settings in the configuration file
             host = self.resolve_host_address(
-                proxy_config.get('host', 'localhost'), 
-                'proxy_server', 
+                proxy_config.get('host', 'localhost'),
+                'proxy_server',
                 'localhost'
             )
-            
+
             # Process port configuration
             port_value = proxy_config.get('port', 1888)
             try:
                 port = int(port_value)
             except (ValueError, TypeError):
                 port = 1888
-            
+
             # If the configured host is localhost or 127.0.0.1, use it directly
             # If it is another address (such as 0.0.0.0), try using the local IP address
             if host in ['localhost', '127.0.0.1']:
@@ -1364,11 +1364,11 @@ class CrossPlatformManager:
                 self.log_info(f"Proxy server listening on 0.0.0.0, using local IP for connection: {connect_host}")
             else:
                 connect_host = host
-            
+
             proxy_url = f"http://{connect_host}:{port}"
-        
+
         self.log_info(f"Starting to unregister MCP servers from proxy: {proxy_url}")
-        
+
         # Waiting for proxy server to be available
         wait_count = 0
         max_wait = 10  # Reduce waiting time
@@ -1389,20 +1389,20 @@ class CrossPlatformManager:
                 connection_error = f"Request timeout: {e}"
             except Exception as e:
                 connection_error = f"Request exception: {e}"
-            
+
             time.sleep(1)
             wait_count += 1
-        
+
         if wait_count == max_wait:
             self.log_error(f"Proxy server inaccessible, skipping automatic unregistration")
             if connection_error:
                 self.log_warning(f"Connection error: {connection_error}")
             return
-        
+
         # Unregister MCP servers
         unregistered_count = 0
         failed_count = 0
-        
+
         # Determine servers to unregister
         if target_server:
             # Unregister only specified server
@@ -1426,14 +1426,14 @@ class CrossPlatformManager:
             except Exception as e:
                 self.log_error(f"Failed to get proxy status: {e}")
                 return
-        
+
         for server_name in servers_to_unregister:
             try:
                 self.log_info(f"Unregistering server: {server_name}")
-                
+
                 # Send unregistration request
                 unregister_url = f"{proxy_url}/proxy/unregister/{server_name}"
-                
+
                 # Add retry mechanism
                 max_retries = 3
                 retry_count = 0
@@ -1445,7 +1445,7 @@ class CrossPlatformManager:
                             unregister_url,
                             timeout=5
                         )
-                        
+
                         if response.status_code == 200:
                             response_data = response.json()
                             status = response_data.get('status')
@@ -1472,15 +1472,15 @@ class CrossPlatformManager:
                         retry_count += 1
                         self.log_warning(f"{server_name} unregistration failed (attempt {retry_count}/{max_retries}): {e}")
                         time.sleep(1)
-                
+
                 if not success:
                     self.log_error(f"[X] {server_name} unregistration failed, attempted {max_retries} times")
                     failed_count += 1
-                    
+
             except Exception as e:
                 self.log_error(f"[X] {server_name} unregistration failed: {e}")
                 failed_count += 1
-        
+
         # Display unregistration results
         if target_server:
             # Result display for specified server mode
@@ -1502,7 +1502,7 @@ class CrossPlatformManager:
         """Automatically register MCP servers to proxy"""
         config = self.load_config()
         proxy_config = config.get('proxy_server', {})
-        
+
         # If using a custom proxy URL, skip local proxy configuration check
         if not custom_proxy_url:
             # Check if proxy server is enabled
@@ -1511,7 +1511,7 @@ class CrossPlatformManager:
                 enabled = enabled_value.lower() in ('true', 'yes', '1', 'on')
             else:
                 enabled = bool(enabled_value)
-            
+
             if not enabled:
                 self.log_info("Proxy server not enabled, skipping automatic registration")
                 return
@@ -1525,18 +1525,18 @@ class CrossPlatformManager:
         else:
             # Use settings from configuration file
             host = self.resolve_host_address(
-                proxy_config.get('host', 'localhost'), 
-                'proxy_server', 
+                proxy_config.get('host', 'localhost'),
+                'proxy_server',
                 'localhost'
             )
-            
+
             # Process port configuration
             port_value = proxy_config.get('port', 1888)
             try:
                 port = int(port_value)
             except (ValueError, TypeError):
                 port = 1888
-            
+
             # If configured host is localhost or 127.0.0.1, use directly
             # If it's another address (like 0.0.0.0), try using local IP
             if host in ['localhost', '127.0.0.1']:
@@ -1548,16 +1548,16 @@ class CrossPlatformManager:
                 self.log_info(f"Proxy server listening on 0.0.0.0, using local IP for connection: {connect_host}")
             else:
                 connect_host = host
-            
+
             proxy_url = f"http://{connect_host}:{port}"
-        
+
         self.log_info(f"Starting automatic registration of MCP servers to proxy: {proxy_url}")
-        
+
         # Wait for proxy server to fully start
         wait_count = 0
         max_wait = 30  # Increase maximum waiting time to 30 seconds
         connection_error = None
-        
+
         self.log_info(f"Waiting for proxy server to be ready, timeout: {max_wait} seconds...")
 
         while wait_count < max_wait:
@@ -1575,17 +1575,17 @@ class CrossPlatformManager:
                 connection_error = f"Request timeout: {e}"
             except Exception as e:
                 connection_error = f"Request exception: {e}"
-            
+
             # Display detailed waiting status
             if wait_count % 5 == 0:  # Show detailed log every 5 seconds
                 detail = f"Attempting connection: {proxy_url}/proxy/status"
                 if connection_error:
                     detail += f" - Error: {connection_error}"
                 self.log_info(f"Waiting for proxy server startup... ({wait_count}/{max_wait} seconds)", detail)
-            
+
             time.sleep(1)
             wait_count += 1
-        
+
         if wait_count == max_wait:
             self.log_error(f"Proxy server startup timeout, skipping automatic registration")
             self.log_warning("Possible reasons:")
@@ -1594,10 +1594,10 @@ class CrossPlatformManager:
             self.log_warning("3. Network issues preventing proxy access")
             if connection_error:
                 self.log_warning(f"Last connection error: {connection_error}")
-            
+
             # Try different connection methods for recovery
             self.log_info("Trying other ways to connect to proxy...")
-            
+
             # Try connecting using localhost
             try:
                 alt_proxy_url = f"http://localhost:{port}"
@@ -1611,14 +1611,14 @@ class CrossPlatformManager:
                     self.log_warning(f"localhost connection failed: status code {response.status_code}")
             except Exception as e:
                 self.log_warning(f"localhost connection failed: {e}")
-        
+
         # Register MCP servers
         registered_count = 0
         failed_count = 0
-        
+
         # Get running processes on local machine
         processes = self.get_running_processes()
-        
+
         # Get remote service records
         remote_servers = {}
         if self.registry_file.exists():
@@ -1629,7 +1629,7 @@ class CrossPlatformManager:
                         registry = {}
                     else:
                         registry = json.loads(content)
-                
+
                 for server_id, info in registry.items():
                     if not self._is_local_server(info):
                         # This is a remote service
@@ -1637,18 +1637,18 @@ class CrossPlatformManager:
                         if server_name:
                             remote_servers[server_name] = info
                             self.log_debug(f"Discovered remote service: {server_name} ({info.get('host')}:{info.get('port')})")
-                            
+
             except Exception as e:
                 self.log_warning(f"Failed to read remote service records: {e}")
-        
+
         # Get enabled servers from configuration file
         server_configs = self.get_server_configs()
         all_servers = {config.name: config for config in server_configs}
-        
+
         # Determine which servers to register based on whether target_server is specified
         if target_server:
             # Register only the specified server
-            if ((target_server in processes or target_server in remote_servers) and 
+            if ((target_server in processes or target_server in remote_servers) and
                 target_server not in ["proxy_server", "api_server"]):
                 mcp_servers = [target_server]
                 server_type = "local" if target_server in processes else "remote"
@@ -1658,16 +1658,16 @@ class CrossPlatformManager:
                 return
         else:
             # Register all discovered MCP servers (locally running + remotely registered)
-            local_mcp_servers = [name for name, _ in processes.items() 
+            local_mcp_servers = [name for name, _ in processes.items()
                                if name not in ["proxy_server", "api_server"]]
             remote_mcp_servers = [name for name in remote_servers.keys()]
-            
+
             mcp_servers = local_mcp_servers + remote_mcp_servers
-            
+
             if not mcp_servers:
                 self.log_warning("No registerable MCP servers found")
                 return
-            
+
             self.log_info(f"Discovered {len(local_mcp_servers)} local servers + {len(remote_mcp_servers)} remote servers, total {len(mcp_servers)} servers waiting for registration")
 
         # Process all servers needing registration (local + remote)
@@ -1675,11 +1675,11 @@ class CrossPlatformManager:
             # Skip non-MCP servers
             if name in ["proxy_server", "api_server"]:
                 continue
-            
+
             # If target_server is specified, only process the specified server
             if target_server and name != target_server:
                 continue
-            
+
             try:
                 # Determine if it's a local service or remote service
                 if name in processes:
@@ -1790,7 +1790,7 @@ class CrossPlatformManager:
             except Exception as e:
                 self.log_error(f"[X] {name} registration failed: {e}")
                 failed_count += 1
-        
+
         # Display registration results
         if target_server:
             # Specified server mode: result display
@@ -1807,7 +1807,7 @@ class CrossPlatformManager:
                     self.log_error(f"Registration failed - Found {len(mcp_servers)} MCP servers, but all registration attempts failed")
                 else:
                     self.log_warning("No registerable MCP servers found")
-        
+
         # Verify registration results
         try:
             response = requests.get(f"{proxy_url}/proxy/status", timeout=5)
@@ -1815,7 +1815,7 @@ class CrossPlatformManager:
                 status_data = response.json()
                 total_servers = status_data.get('total_servers', 0)
                 registered_servers_dict = status_data.get('servers', {})
-                
+
                 if target_server:
                     # Specified server mode: check if target server is in registration list
                     if target_server in registered_servers_dict:
@@ -1830,7 +1830,7 @@ class CrossPlatformManager:
                 else:
                     # All servers mode: display overall status
                     self.log_info(f"Proxy server current registration status: {total_servers} servers")
-                
+
                 # Display all registered servers in verbose mode
                 if self.verbose and registered_servers_dict:
                     self.log_debug("All registered servers:")
@@ -1937,13 +1937,13 @@ class CrossPlatformManager:
         self._monitor_thread = threading.Thread(target=monitor_loop, daemon=True)
         self._monitor_thread.start()
         self.log_debug("Server monitoring thread started")
-    
+
     def _stop_monitor_thread(self):
         """Stop monitoring thread"""
         try:
             if self._monitor_stop_event is not None:
                 self._monitor_stop_event.set()
-            
+
             if self._monitor_thread is not None and self._monitor_thread.is_alive():
                 self.log_debug("Waiting for monitor thread to stop...")
                 self._monitor_thread.join(timeout=5)
@@ -1951,7 +1951,7 @@ class CrossPlatformManager:
                     self.log_warning("Monitor thread stop timeout")
                 else:
                     self.log_debug("Monitor thread has stopped")
-            
+
             self._monitor_stop_event = None
             self._monitor_thread = None
         except Exception as e:
@@ -1959,19 +1959,19 @@ class CrossPlatformManager:
             # reset state
             self._monitor_stop_event = None
             self._monitor_thread = None
-    
+
     def _stop_process_and_children(self, name: str, process: psutil.Process, force: bool = False) -> int:
         """Stop the process and all its child processes"""
         try:
             self.log_info(f"Stopping {name} (PID: {process.pid})")
-            
+
             # Get process tree (including all child processes)
             try:
                 children = process.children(recursive=True)
                 self.log_debug(f"{name} has {len(children)} child processes")
             except psutil.NoSuchProcess:
                 children = []
-            
+
             # Windows special handling: If it's a process group, try to terminate the entire process group
             if self.is_windows:
                 success = self._terminate_windows_process_group(process, force)
@@ -1979,7 +1979,7 @@ class CrossPlatformManager:
                     self.log_success(f"[OK] Stopping {name} (Windows process group)")
                     self._cleanup_pid_file(name)
                     return 1
-            
+
             # Recursively stop all child processes
             for child in children:
                 try:
@@ -1994,13 +1994,13 @@ class CrossPlatformManager:
                             child.kill()
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
-            
+
             # Stop the main process
             if force:
                 process.kill()
             else:
                 process.terminate()
-                
+
             # Waiting for the process to end
             try:
                 process.wait(timeout=5)
@@ -2011,13 +2011,13 @@ class CrossPlatformManager:
                     process.wait(timeout=3)
                 except psutil.TimeoutExpired:
                     self.log_error(f"Failed to force stop {name}")
-            
+
             # Clean up PID files
             self._cleanup_pid_file(name)
-            
+
             self.log_success(f"[OK] Stopped {name}")
             return 1
-            
+
         except psutil.NoSuchProcess:
             self.log_info(f"{name} process does not exist")
             self._cleanup_pid_file(name)
@@ -2025,12 +2025,12 @@ class CrossPlatformManager:
         except Exception as e:
             self.log_error(f"Failed to stop {name}: {e}")
             return 0
-    
+
     def _terminate_windows_process_group(self, process: psutil.Process, force: bool = False) -> bool:
         """Terminate process group on Windows"""
         if not self.is_windows:
             return False
-            
+
         try:
             # Terminate process tree using taskkill command on Windows
             if force:
@@ -2074,7 +2074,7 @@ class CrossPlatformManager:
                 except Exception as e:
                     self.log_debug(f"taskkill graceful termination exception: {e}")
                     return False
-                    
+
         except Exception as e:
             self.log_debug(f"Windows process group termination failed: {e}")
             return False
@@ -2135,13 +2135,13 @@ class CrossPlatformManager:
             self.log_debug(f"Failed to scan processes: {e}")
 
         return cleaned_count
-    
+
     def _cleanup_pid_file(self, name: str):
         """Clean up a single PID file"""
         pid_file = self.pid_dir / f"{name}.pid"
         if pid_file.exists():
             pid_file.unlink()
-    
+
     def _cleanup_all_pid_files(self):
         """Clean up all PID files"""
         try:
@@ -2150,27 +2150,27 @@ class CrossPlatformManager:
                 self.log_debug(f"Cleaning PID file: {pid_file.name}")
         except Exception as e:
             self.log_debug(f"Failed to clean up PID files: {e}")
-    
-    def start_servers(self, target_server: str = None, proxy_url: str = None):
+
+    def start_servers(self, target_server: str = None, proxy_url: str = None, foreground: bool = False):
         """Start servers"""
         if target_server:
             self.show_header("LiteMCP Framework", f"Starting specified server: {target_server}")
         else:
             self.show_header("LiteMCP Framework", "Starting server cluster")
-        
+
         # Environment check
         self.show_section("Environment Check", self.icons['magnifying'])
         if not self.check_python_environment():
             return
-        
+
         # Pre-cleanup check
         self.show_section("Pre-cleanup Check", self.icons['shield'])
         self.cleanup_dead_processes_and_ports()
-        
+
         # Load remote services into memory
         self.show_section("Load Remote Services", self.icons['network'])
         self._load_remote_servers_to_memory()
-        
+
         # Clean up registration records (scope depends on whether a server is specified)
         self.show_section("Clean Up Registration Records", self.icons['shield'])
         if target_server:
@@ -2181,24 +2181,24 @@ class CrossPlatformManager:
             # When starting all servers, clean up all local registration records (preserve remote service records)
             self.log_info("Cleaning registration records for all local servers, preserving remote service records")
             self._cleanup_local_registry_records()
-        
+
         # Clean up existing servers
         self.show_section("Clean Up Existing Servers", self.icons['shield'])
         if target_server:
             self.stop_specific_server(target_server)
         else:
             self._cleanup_existing_servers_for_startup()
-        
+
         # Get server configurations
         self.show_section("Read Configuration", self.icons['gear'])
-        
+
         # Display configuration file information
         self.log_info(f"Configuration file: {self.config_file.name}")
         self.log_debug(f"Configuration file path: {self.config_file}")
-        
+
         server_configs = self.get_server_configs()
         all_server_configs = server_configs.copy()  # Save all configurations for error messages
-        
+
         if target_server:
             # Filter specified server
             server_configs = [s for s in server_configs if s.name == target_server]
@@ -2207,7 +2207,7 @@ class CrossPlatformManager:
                 available_servers = [s.name for s in all_server_configs]
                 self.log_info(f"Available servers: {', '.join(available_servers)}")
                 return
-            
+
             # Display detailed configuration of the specified server
             for config in server_configs:
                 self.log_info(f"Server {config.name} configuration:")
@@ -2223,32 +2223,32 @@ class CrossPlatformManager:
             # Display overview of all server configurations
             enabled_servers = [s for s in server_configs if s.enabled]
             disabled_servers = [s for s in server_configs if not s.enabled]
-            
+
             self.log_info(f"There are {len(server_configs)} MCP servers in the configuration file")
             if enabled_servers:
                 self.log_info(f"Enabled servers ({len(enabled_servers)}): {', '.join(s.name for s in enabled_servers)}")
             if disabled_servers:
                 self.log_info(f"Disabled servers ({len(disabled_servers)}): {', '.join(s.name for s in disabled_servers)}")
-            
+
             # Only start enabled servers
             server_configs = enabled_servers
-        
+
         if not server_configs:
             self.log_warning("No servers available to start")
             return
-        
-        self.log_info(f"Preparing to start {len(server_configs)} servers", 
+
+        self.log_info(f"Preparing to start {len(server_configs)} servers",
                      f"Servers: {', '.join(s.name for s in server_configs)}")
-        
+
         # Start proxy server (only when starting all servers)
         proxy_started = False
         if not target_server:
             self.show_section("Start Proxy Server", self.icons['network'])
             proxy_started = self._start_proxy_server_enhanced()
-        
+
         # Start MCP Servers
         self.show_section("Start MCP Servers", self.icons['server'])
-        
+
         started_count = 0
         failed_count = 0
 
@@ -2311,11 +2311,11 @@ class CrossPlatformManager:
                         failed_count += 1
 
                     time.sleep(1)  # Avoid port conflicts
-        
+
         # Auto Register MCP Servers to Proxy
         should_register = False
         register_reason = ""
-        
+
         if not target_server and proxy_started:
             # All servers started and local proxy started successfully
             should_register = True
@@ -2334,7 +2334,7 @@ class CrossPlatformManager:
             if "proxy_server" in running_processes:
                 should_register = True
                 register_reason = "Detected local proxy server is running"
-        
+
         if should_register:
             self.show_section("Register MCP Servers to Proxy", self.icons['gear'])
             self.log_info(f"Registration reason: {register_reason}")
@@ -2351,30 +2351,50 @@ class CrossPlatformManager:
             self.log_info("External MCP services started, services will automatically register to proxy server")
         else:
             self.log_debug("No external MCP services started")
-        
+
         # Start API server (only when starting all servers)
         if not target_server:
             self.show_section("Start API Server", self.icons['network'])
             self._start_api_server_enhanced()
-        
+
         # Start monitoring thread (only when starting all servers)
         if not target_server:
             self.show_section("Start Server Monitoring", self.icons['shield'])
             self._monitor_and_restart_servers()
-        
+
         # Show results
         self.show_section("Startup Results", self.icons['chart'])
         if failed_count == 0:
             self.log_success(f"All servers started successfully! Success: {started_count}")
         else:
             self.log_warning(f"Some servers failed to start - Success: {started_count}, Failed: {failed_count}")
-    
+
+        # Docker Front-end operation mode
+        if foreground and not target_server:
+            self.show_section("Docker Foreground Mode", self.icons['shield'])
+            self.log_info("Running in Docker foreground mode - keeping main process alive")
+            self.log_info("Press Ctrl+C to stop all services")
+
+            try:
+                # Keep the main process running and listen for signals
+                while True:
+                    time.sleep(10)
+                    # Check if critical services are still running
+                    processes = self.get_running_processes()
+                    if 'proxy_server' not in processes and 'api_server' not in processes:
+                        self.log_warning("Critical services stopped, exiting...")
+                        break
+            except KeyboardInterrupt:
+                self.log_info("Received shutdown signal, stopping all services...")
+                self.stop_all_servers(True)
+                self.log_success("All services stopped gracefully")
+
     def show_status(self):
         """Display server status"""
         self.show_header("LiteMCP Server Status")
-        
+
         processes = self.get_running_processes()
-        
+
         if RICH_AVAILABLE:
             table = Table(title="Server Status")
             table.add_column("Server", style="cyan", no_wrap=True)
@@ -2440,7 +2460,7 @@ class CrossPlatformManager:
 
             if not processes:
                 table.add_row("No running servers", "", "", "", "", "")
-            
+
             self.console.print(table)
         else:
             # Simple table display
@@ -2495,34 +2515,34 @@ class CrossPlatformManager:
 
             if not processes:
                 print("No running servers")
-    
+
     def show_logs(self):
         """Display log information"""
         self.show_header("LiteMCP Server Logs")
-        
+
         log_files = list(self.log_dir.glob("*.log"))
-        
+
         if not log_files:
             self.log_info("No log files available")
             return
-        
+
         if RICH_AVAILABLE:
             table = Table(title="Available Log Files")
             table.add_column("Log File", style="cyan")
             table.add_column("Size", style="green")
             table.add_column("Modified Time", style="yellow")
-            
+
             for log_file in log_files:
                 stat = log_file.stat()
                 size = f"{stat.st_size / 1024:.1f} KB"
                 mtime = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
                 table.add_row(log_file.name, size, mtime)
-            
+
             self.console.print(table)
         else:
             print(f"{'Log File':<20} {'Size':<10} {'Modified Time':<20}")
             print("-" * 55)
-            
+
             for log_file in log_files:
                 stat = log_file.stat()
                 size = f"{stat.st_size / 1024:.1f} KB"
@@ -2666,31 +2686,31 @@ class CrossPlatformManager:
     def clean_files(self):
         """Clean up files"""
         self.show_header("Clean Up System Files")
-        
+
         # Clean up log files
         log_files = list(self.log_dir.glob("*.log"))
         for log_file in log_files:
             log_file.unlink()
-        
+
         # Clean up PID files
         pid_files = list(self.pid_dir.glob("*.pid"))
         for pid_file in pid_files:
             pid_file.unlink()
-        
+
         self.log_success("Cleanup completed", f"Deleted {len(log_files)} log files and {len(pid_files)} PID files")
 
     def show_config(self):
         """Show configuration"""
         self.show_header("LiteMCP Current Configuration")
-        
+
         if self.config_file.exists():
             self.log_info(f"Configuration file: {self.config_file}")
             print()
-            
+
             try:
                 with open(self.config_file, 'r', encoding='utf-8') as f:
                     content = f.read()
-                
+
                 if RICH_AVAILABLE:
                     syntax = Syntax(content, "yaml", theme="github-dark", line_numbers=True)
                     self.console.print(Panel(syntax, title="Configuration Content", border_style="cyan"))
@@ -2703,68 +2723,68 @@ class CrossPlatformManager:
                 self.log_error(f"Failed to read configuration file: {e}")
         else:
             self.log_error(f"Configuration file does not exist: {self.config_file}")
-    
+
     def start_api_server_standalone(self):
         """Start API server standalone"""
         self.show_header("LiteMCP API Server", "Standalone Mode")
-        
+
         # Environment check
         if not self.check_python_environment():
             return
-        
+
         # Stop potentially running API server
         self.stop_specific_server("api_server")
-        
+
         # Get configuration
         config = self.load_config()
         api_config = config.get('api_server', {})
-        
+
         # Handle enabled configuration
         enabled_value = api_config.get('enabled', True)
         if isinstance(enabled_value, str):
             enabled = enabled_value.lower() in ('true', 'yes', '1', 'on')
         else:
             enabled = bool(enabled_value)
-        
+
         if not enabled:
             self.log_warning("API server is disabled in configuration file")
             return
-        
+
         host = self.resolve_host_address(
-            api_config.get('host', 'null'), 
-            'api_server', 
+            api_config.get('host', 'null'),
+            'api_server',
             'ip'
         )
-        
+
         # Process port configuration
         port_value = api_config.get('port', 9000)
         try:
             port = int(port_value)
         except (ValueError, TypeError):
             port = 9000
-            
+
         self.log_debug(f"API server configuration: host={host}, port={port}, enabled={enabled}")
-        
+
         # Check port availability
         if not is_port_available(port):
             self.log_error(f"Port {port} is already occupied")
             return
-        
+
         # Start API server
         log_file = self.log_dir / "api_server.log"
         pid_file = self.pid_dir / "api_server.pid"
-        
+
         cmd_base = [
             sys.executable, "src/cli.py", "api",
             "--host", host,
             "--port", str(port)
         ]
-        
+
         if self.use_poetry:
             cmd = ["poetry", "run"] + cmd_base
         else:
             cmd = cmd_base
-        
+
         try:
             with open(log_file, 'w', encoding='utf-8') as f:
                 if self.is_windows:
@@ -2783,14 +2803,14 @@ class CrossPlatformManager:
                         stderr=subprocess.STDOUT,
                         preexec_fn=os.setsid
                     )
-            
+
             # Save PID
             with open(pid_file, 'w') as f:
                 f.write(str(process.pid))
-            
+
             # Wait for startup
             time.sleep(3)
-            
+
             if process.poll() is None and not is_port_available(port):
                 # Obtain the host address for display purposes
                 display_host = self.resolve_host_address(api_config.get('host', 'null'), 'api_server', 'display')
@@ -2801,74 +2821,74 @@ class CrossPlatformManager:
             else:
                 self.log_error("[X] API server failed to start")
                 return False
-                
+
         except Exception as e:
             self.log_error(f"Failed to start API server: {e}")
             return False
-        
+
         return True
-    
+
     def start_proxy_server_standalone(self):
         """Start proxy server standalone"""
         self.show_header("LiteMCP Proxy Server", "Standalone Mode")
-        
+
         # Environment check
         if not self.check_python_environment():
             return
-        
+
         # Stop potentially running proxy server
         self.stop_specific_server("proxy_server")
-        
+
         # Get configuration
         config = self.load_config()
         proxy_config = config.get('proxy_server', {})
-        
+
         # Handle enabled configuration
         enabled_value = proxy_config.get('enabled', True)
         if isinstance(enabled_value, str):
             enabled = enabled_value.lower() in ('true', 'yes', '1', 'on')
         else:
             enabled = bool(enabled_value)
-        
+
         if not enabled:
             self.log_warning("Proxy server is disabled in configuration file")
             return
-        
+
         host = self.resolve_host_address(
-            proxy_config.get('host', 'localhost'), 
-            'proxy_server', 
+            proxy_config.get('host', 'localhost'),
+            'proxy_server',
             'localhost'
         )
-        
+
         # Process port configuration
         port_value = proxy_config.get('port', 1888)
         try:
             port = int(port_value)
         except (ValueError, TypeError):
             port = 1888
-            
+
         self.log_debug(f"Proxy server configuration: host={host}, port={port}, enabled={enabled}")
-        
+
         # Check port availability
         if not is_port_available(port):
             self.log_error(f"Port {port} is already occupied")
             return
-        
+
         # Start proxy server
         log_file = self.log_dir / "proxy_server.log"
         pid_file = self.pid_dir / "proxy_server.pid"
-        
+
         cmd_base = [
             sys.executable, "src/cli.py", "proxy",
             "--host", host,
             "--port", str(port)
         ]
-        
+
         if self.use_poetry:
             cmd = ["poetry", "run"] + cmd_base
         else:
             cmd = cmd_base
-        
+
         try:
             with open(log_file, 'w', encoding='utf-8') as f:
                 if self.is_windows:
@@ -2887,14 +2907,14 @@ class CrossPlatformManager:
                         stderr=subprocess.STDOUT,
                         preexec_fn=os.setsid
                     )
-            
+
             # Save PID
             with open(pid_file, 'w') as f:
                 f.write(str(process.pid))
-            
+
             # Wait for startup
             time.sleep(3)
-            
+
             if process.poll() is None and not is_port_available(port):
                 # Obtain the host address for display purposes
                 display_host = self.resolve_host_address(proxy_config.get('host', 'localhost'), 'proxy_server', 'display')
@@ -2905,11 +2925,11 @@ class CrossPlatformManager:
             else:
                 self.log_error("[X] Proxy server failed to start")
                 return False
-                
+
         except Exception as e:
             self.log_error(f"Failed to start proxy server: {e}")
             return False
-        
+
         return True
 
     def _start_external_mcp_services(self, proxy_url: str = None):
@@ -3148,7 +3168,7 @@ class CrossPlatformManager:
     def diagnose_system(self):
         """System diagnostic function"""
         self.show_header("LiteMCP System Diagnosis")
-        
+
         # Python environment check
         self.show_section("Python Environment Check", self.icons['magnifying'])
         python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
@@ -3156,18 +3176,18 @@ class CrossPlatformManager:
         self.log_info(f"Python path: {sys.executable}")
         self.log_info(f"Project directory: {self.project_dir}")
         self.log_info(f"Current working directory: {os.getcwd()}")
-        
+
         # Module import check
         self.show_section("Module Import Check", self.icons['gear'])
         try:
             self.log_success("src.core.utils: [OK] Success")
         except Exception as e:
             self.log_error(f"Module import test failed: {e}")
-        
+
         # Port allocation test
         self.show_section("Port Allocation Test", self.icons['lightning'])
         self.log_info("Testing smart port allocation...")
-        
+
         try:
             # Test port allocation for several services
             for service in ['example', 'school', 'pm', 'sonic']:
@@ -3175,21 +3195,11 @@ class CrossPlatformManager:
                 self.log_success(f"{service}: {port}")
         except Exception as e:
             self.log_error(f"Port allocation test failed: {e}")
-        
-        # Network status check
-        self.show_section("Network Status Check", self.icons['network'])
-        self.log_info("Checking port occupancy for ports 8000-8010:")
-        
-        for port in range(8000, 8011):
-            if is_port_available(port):
-                self.log_info(f"Port {port} is available")
-            else:
-                self.log_warning(f"Port {port} is occupied")
-        
+
         # Current process check
         self.show_section("Current LiteMCP Process Check", self.icons['server'])
         processes = self.get_running_processes()
-        
+
         if processes:
             self.log_info("Found LiteMCP-related processes:")
             for name, process in processes.items():
@@ -3201,18 +3211,18 @@ class CrossPlatformManager:
                     self.log_warning(f"  {name} process does not exist")
         else:
             self.log_info("No running LiteMCP processes found")
-        
+
         # PID file check
         self.show_section("PID File Check", self.icons['chart'])
         pid_files = list(self.pid_dir.glob("*.pid"))
-        
+
         if pid_files:
             self.log_info("Found PID files:")
             for pid_file in pid_files:
                 try:
                     with open(pid_file, 'r') as f:
                         pid = int(f.read().strip())
-                    
+
                     if psutil.pid_exists(pid):
                         self.log_success(f"  {pid_file.stem} (PID: {pid}) - Process running")
                     else:
@@ -3221,7 +3231,7 @@ class CrossPlatformManager:
                     self.log_error(f"  {pid_file.stem} - Failed to read: {e}")
         else:
             self.log_info("No PID files found")
-        
+
         # Registry check
         self.show_section("Registry Check", self.icons['gear'])
         if self.registry_file.exists():
@@ -3233,7 +3243,7 @@ class CrossPlatformManager:
                         return
                     else:
                         registry = json.loads(content)
-                
+
                 self.log_info(f"  Registry entries: {len(registry)}")
                 for key, info in registry.items():
                     name = info.get('name', 'unknown')
@@ -3246,41 +3256,41 @@ class CrossPlatformManager:
                     self.log_error(f"Failed to read registry: {e}")
         else:
             self.log_info("Registry file does not exist")
-    
+
     def cleanup_dead_processes(self):
         """Clean up dead processes and zombie ports"""
         self.show_header("Clean Up Dead Processes and Zombie Ports")
-        
+
         cleaned_pids = 0
         cleaned_processes = 0
         cleaned_ports = 0
-        
+
         # Clean up invalid PID files
         self.log_info("Cleaning up invalid PID files...")
         pid_files = list(self.pid_dir.glob("*.pid"))
-        
+
         for pid_file in pid_files:
             try:
                 with open(pid_file, 'r') as f:
                     pid = int(f.read().strip())
-                
+
                 if not psutil.pid_exists(pid):
                     pid_file.unlink()
                     cleaned_pids += 1
                     self.log_success(f"Cleaned up invalid PID file: {pid_file.name}")
             except Exception as e:
                 self.log_warning(f"Failed to process PID file {pid_file.name}: {e}")
-        
+
         # Clean up orphan processes
         self.log_info("Searching for orphan processes...")
         try:
             for process in psutil.process_iter(['pid', 'name', 'cmdline']):
                 try:
                     cmdline = ' '.join(process.info['cmdline'] or [])
-                    if ('cli.py serve' in cmdline or 
-                        'cli.py api' in cmdline or 
+                    if ('cli.py serve' in cmdline or
+                        'cli.py api' in cmdline or
                         'cli.py proxy' in cmdline):
-                        
+
                         # Check if there is a corresponding PID file
                         has_pid_file = False
                         for pid_file in self.pid_dir.glob("*.pid"):
@@ -3292,7 +3302,7 @@ class CrossPlatformManager:
                                     break
                             except:
                                 continue
-                        
+
                         if not has_pid_file:
                             process.terminate()
                             cleaned_processes += 1
@@ -3301,7 +3311,7 @@ class CrossPlatformManager:
                     continue
         except Exception as e:
             self.log_warning(f"Failed to clean up orphan processes: {e}")
-        
+
         # Clean up local service registry records (keep remote service records)
         if self.registry_file.exists():
             try:
@@ -3312,7 +3322,7 @@ class CrossPlatformManager:
                         return
                     else:
                         registry = json.loads(content)
-                
+
                 # Only keep remote server records
                 cleaned_registry = {}
                 for server_id, info in registry.items():
@@ -3322,43 +3332,43 @@ class CrossPlatformManager:
                         server_name = info.get('name', 'unknown')
                         host = info.get('host', 'unknown')
                         self.log_info(f"Keep remote service record: {server_name} ({host})")
-                
+
                 # Write back cleaned registry
                 with open(self.registry_file, 'w', encoding='utf-8') as f:
                     json.dump(cleaned_registry, f, indent=2, ensure_ascii=False)
-                
+
                 cleared_count = len(registry) - len(cleaned_registry)
                 if cleared_count > 0:
                     self.log_success(f"Clean up local registry records: {cleared_count}")
                 else:
                     self.log_info("No local registry records need to be cleaned up")
-                    
+
             except Exception as e:
                 self.log_warning(f"Failed to clean up registry: {e}")
-        
+
         self.log_info(f"Cleanup completed: {cleaned_pids} PID files, {cleaned_processes} orphan processes, {cleaned_ports} zombie ports")
-    
+
     def init_project(self):
         """Initialize project (first installation)"""
         self.show_header("LiteMCP Framework Project Initialization", "First Installation and Configuration")
-        
+
         # 1. Python version check
         self.show_section("Python Environment Check", self.icons['magnifying'])
         if not self.check_python_environment():
             self.log_error("Python environment does not meet requirements, initialization failed")
             return False
-        
+
         # 2. Check Poetry environment
         self.show_section("Check Poetry Environment", self.icons['gear'])
         if not self.use_poetry:
             self.log_warning("Poetry not found. Please install Poetry and run 'poetry install' manually.")
         else:
             self.log_success("Poetry environment detected. Dependencies should be installed via 'poetry install'.")
-        
+
         # 3. Create necessary directories
         self.show_section("Create Directory Structure", self.icons['shield'])
         self._create_project_directories()
-        
+
         # 4. Verify basic setup
         self.show_section("Verify Basic Setup", self.icons['star'])
         if self._verify_basic_setup():
@@ -3369,7 +3379,7 @@ class CrossPlatformManager:
         else:
             self.log_error("Initialization verification failed")
             return False
-    
+
     def _create_project_directories(self):
         """Create necessary project directories"""
         directories = [
@@ -3377,14 +3387,14 @@ class CrossPlatformManager:
             self.pid_dir,
             self.project_dir / "runtime" / "cache"
         ]
-        
+
         for directory in directories:
             try:
                 directory.mkdir(parents=True, exist_ok=True)
                 self.log_success(f"Create directory: {directory.relative_to(self.project_dir)}")
             except Exception as e:
                 self.log_error(f"Failed to create directory {directory}: {e}")
-    
+
     def _verify_basic_setup(self):
         """Verify basic project setup"""
         try:
@@ -3395,53 +3405,53 @@ class CrossPlatformManager:
                 if not full_path.exists():
                     self.log_error(f"Missing directory: {dir_path}")
                     return False
-                    
+
             self.log_success("Directory structure verified successfully")
-            
+
             # Test configuration file
             if not self.config_file.exists():
                 self.log_warning("Configuration file not found, but this is not critical")
             else:
                 self.log_success("Configuration file found")
-                
+
             self.log_success("Basic setup verification passed")
             return True
-            
+
         except Exception as e:
             self.log_error(f"Basic setup verification failed: {e}")
             return False
-    
+
     def _show_quick_start_guide(self):
         """Show quick start guide"""
         self.show_section("Quick Start Guide", self.icons['fire'])
-        
+
         print("> You can now start using LiteMCP Framework!")
         print()
-        
+
         self.log_info("1. Check current status:")
         print("   python3 scripts/manage.py ps")
         print()
-        
+
         self.log_info("2. Start all servers:")
         print("   python3 scripts/manage.py up")
         print()
-        
+
         self.log_info("3. Start specific server:")
         print("   python3 scripts/manage.py up --name example")
         print()
-        
+
         self.log_info("4. Register to remote proxy:")
         print("   python3 scripts/manage.py up --proxy-url http://192.168.1.100:1888")
         print()
-        
+
         self.log_info("5. View help information:")
         print("   python3 scripts/manage.py --help")
         print()
-        
+
         self.log_info("6. System diagnosis:")
         print("   python3 scripts/manage.py diagnose")
         print()
-        
+
         if self.is_windows:
             self.log_info("Windows users can also use batch files:")
             print("   scripts\\manage_py.bat up")
@@ -3450,21 +3460,21 @@ class CrossPlatformManager:
             print("   echo 'alias litemcp=\"python3 scripts/manage.py\"' >> ~/.bashrc")
             print("   source ~/.bashrc")
             print("   litemcp up")
-        
+
         print()
         self.log_success("Enjoy your usage! [DONE]")
-    
+
     def show_help(self):
         """Show beautifully formatted help information"""
         self.show_header("LiteMCP Framework Management Tool")
-        
+
         print()
         print("Usage: python scripts/manage.py <command> [options]")
         print()
-        
+
         self.log_info("[TIP] Two command styles are supported:")
         print()
-        
+
         print("[EDIT] Detailed commands (recommended for scripts):")
         print("  start         Start all configured servers")
         print("  stop          Stop all servers")
@@ -3483,7 +3493,7 @@ class CrossPlatformManager:
         print("  validate      Validate consistency between registry and configuration file")
         print("  fix           Clean up invalid records in registry")
         print()
-        
+
         print("* Quick commands (recommended for daily use):")
         print("  up            > Start all servers (same as start)")
         print("  down          [STOP]  Stop all servers (same as stop --force)")
@@ -3575,7 +3585,7 @@ class CrossPlatformManager:
         try:
             if not psutil.pid_exists(pid):
                 return False
-            
+
             process = psutil.Process(pid)
             # Check if process is running and not a zombie process
             return process.is_running() and process.status() != psutil.STATUS_ZOMBIE
@@ -3623,7 +3633,7 @@ class CrossPlatformManager:
                     pid_file.unlink()
             except Exception as e:
                 self.log_debug(f"Failed to clean up PID file: {e}")
-            
+
         # Clean up zombie records in registry (only clean local services, keep remote services)
         if self.registry_file.exists():
             try:
@@ -3634,42 +3644,42 @@ class CrossPlatformManager:
                         return
                     else:
                         registry = json.loads(content)
-                
+
                 cleaned_registry = {}
                 for server_id, info in registry.items():
                     pid = info.get('pid')
                     server_name = info.get('name', 'unknown')
                     port = info.get('port')
-                    
+
                     # First determine if it's a local server
                     if not self._is_local_server(info):
                         # Remote server: keep directly, no local check
                         cleaned_registry[server_id] = info
                         self.log_debug(f"Keep remote service record: {server_name} ({info.get('host', 'unknown')})")
                         continue
-                    
+
                     # Local server: check if it's actually running
                     is_running = False
-                    
+
                     if pid and self._is_process_alive_and_healthy(pid):
                         # PID exists and is healthy
                         is_running = True
                     elif not pid and port:
                         # PID is empty, but can check through port
                         is_running = self._is_server_running_by_port_and_process(server_name, port)
-                    
+
                     if is_running:
                         cleaned_registry[server_id] = info
                         self.log_debug(f"Keep local service record: {server_name}")
                     else:
                         self.log_warning(f"Clean up local zombie registry record: {server_name}")
-                
+
                 with open(self.registry_file, 'w', encoding='utf-8') as f:
                     json.dump(cleaned_registry, f, indent=2, ensure_ascii=False)
-                    
+
             except Exception as e:
                 self.log_debug(f"Failed to clean up registry: {e}")
-        
+
         # Clean up possible zombie ports
         try:
             for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
@@ -3688,16 +3698,16 @@ class CrossPlatformManager:
     def cleanup_registry_records(self):
         """Clean up registry records that don't match configuration file"""
         self.show_header("Clean up Registry Records")
-        
+
         if not self.registry_file.exists():
             self.log_info("Registry file does not exist, no need to clean up")
             return
-        
+
         try:
             # Load configuration file
             server_configs = self.get_server_configs()
             config_map = {config.name: config for config in server_configs}
-            
+
             # Load registry
             with open(self.registry_file, 'r', encoding='utf-8') as f:
                 content = f.read().strip()
@@ -3709,34 +3719,34 @@ class CrossPlatformManager:
 
             cleaned_records = []
             valid_records = {}
-            
+
             for server_id, server_info in registry.items():
                 server_name = server_info.get('name')
                 transport = server_info.get('transport')
-                
+
                 # Check if server is in configuration file
                 if server_name not in config_map:
                     cleaned_records.append(f"{server_name} (not in configuration file)")
                     continue
-                
+
                 # Check if transport protocol matches
                 expected_transport = config_map[server_name].transport
                 if transport != expected_transport:
                     cleaned_records.append(f"{server_name} (transport protocol mismatch: {transport} != {expected_transport})")
                     continue
-                
+
                 # Check if server is enabled
                 if not config_map[server_name].enabled:
                     cleaned_records.append(f"{server_name} (disabled)")
                     continue
-                
+
                 # Record valid entries
                 valid_records[server_id] = server_info
-            
+
             # Write back cleaned registry
             with open(self.registry_file, 'w', encoding='utf-8') as f:
                 json.dump(valid_records, f, indent=2, ensure_ascii=False)
-            
+
             # Show cleanup results
             if cleaned_records:
                 self.log_success(f"Cleaned up {len(cleaned_records)} invalid records:")
@@ -3744,25 +3754,25 @@ class CrossPlatformManager:
                     self.log_info(f"  - {record}")
             else:
                 self.log_info("No invalid records found in registry")
-            
+
             self.log_info(f"Retained {len(valid_records)} valid records")
-            
+
         except Exception as e:
             self.log_error(f"Failed to clean up registry: {e}")
 
     def validate_registry_consistency(self):
         """Validate consistency between registry and configuration file"""
         self.show_header("Validate Registry Consistency")
-        
+
         if not self.registry_file.exists():
             self.log_info("Registry file does not exist")
             return True
-        
+
         try:
             # Load configuration file
             server_configs = self.get_server_configs()
             enabled_configs = {config.name: config for config in server_configs if config.enabled}
-            
+
             # Load registry
             with open(self.registry_file, 'r', encoding='utf-8') as f:
                 content = f.read().strip()
@@ -3773,26 +3783,26 @@ class CrossPlatformManager:
                     registry = json.loads(content)
 
             issues = []
-            
+
             # Check records in registry
             for server_id, server_info in registry.items():
                 server_name = server_info.get('name')
                 transport = server_info.get('transport')
-                
+
                 if server_name not in enabled_configs:
                     issues.append(f"Server {server_name} in registry is not enabled in configuration file")
                     continue
-                
+
                 expected_transport = enabled_configs[server_name].transport
                 if transport != expected_transport:
                     issues.append(f"Server {server_name} transport protocol mismatch: registry={transport}, config={expected_transport}")
-            
+
             # Check enabled servers in configuration file
             registry_servers = set(info.get('name') for info in registry.values())
             for server_name in enabled_configs:
                 if server_name not in registry_servers:
                     self.log_info(f"Server {server_name} in configuration file not found in registry (may not be started yet)")
-            
+
             if issues:
                 self.log_warning(f"Found {len(issues)} consistency issues:")
                 for issue in issues:
@@ -3801,7 +3811,7 @@ class CrossPlatformManager:
             else:
                 self.log_success("Registry and configuration file are consistent")
                 return True
-                
+
         except Exception as e:
             self.log_error(f"Failed to validate registry consistency: {e}")
             return False
@@ -3869,12 +3879,12 @@ class CrossPlatformManager:
 
         except Exception as e:
             self.log_error(f"Failed to clean up local registry records: {e}")
-    
+
     def _load_remote_servers_to_memory(self):
         """Load remote servers from registry into memory"""
         if not self.registry_file.exists():
             return
-        
+
         try:
             with open(self.registry_file, 'r', encoding='utf-8') as f:
                 content = f.read().strip()
@@ -3884,13 +3894,13 @@ class CrossPlatformManager:
                     registry = json.loads(content)
 
             remote_servers_count = 0
-            
+
             # Load remote services into registry memory via Python script
             for server_id, server_info in registry.items():
                 if not self._is_local_server(server_info):
                     remote_servers_count += 1
                     self.log_debug(f"Load remote server into memory: {server_info.get('name', 'unknown')} ({server_info.get('host', 'unknown')})")
-            
+
             if remote_servers_count > 0:
                 # Reinitialize registry so remote services are loaded into memory
                 try:
@@ -3901,7 +3911,7 @@ class CrossPlatformManager:
                     self.log_debug(f"Loaded {loaded_count} servers into memory")
                 except Exception as e:
                     self.log_warning(f"Problem loading remote servers into memory: {e}")
-            
+
         except Exception as e:
             self.log_error(f"Failed to load remote servers into memory: {e}")
 
@@ -3924,30 +3934,32 @@ def create_argument_parser() -> argparse.ArgumentParser:
   python manage.py unregister --name example --proxy-url http://192.168.1.100:1888  # Unregister specific server from proxy
         """
     )
-    
+
     # Main command
-    parser.add_argument('command', 
-                       choices=['start', 'stop', 'restart', 'status', 'logs', 'clean', 'health', 
-                               'config', 'up', 'down', 'reboot', 'ps', 'log', 'check', 
+    parser.add_argument('command',
+                       choices=['start', 'stop', 'restart', 'status', 'logs', 'clean', 'health',
+                               'config', 'up', 'down', 'reboot', 'ps', 'log', 'check',
                                'clear', 'conf', 'api', 'proxy', 'diagnose', 'cleanup', 'init', 'help', 'unregister', 'validate', 'fix'],
                        help='Command to execute')
-    
+
     # Optional server name positional parameter (supports bash syntax)
-    parser.add_argument('server_name', nargs='?', 
+    parser.add_argument('server_name', nargs='?',
                        help='Server name (optional, supports: python manage.py up example)')
-    
+
     # General options
-    parser.add_argument('--name', '-n', dest='target_server', 
+    parser.add_argument('--name', '-n', dest='target_server',
                        help='Specify the server name to operate on')
     parser.add_argument('--proxy-url', '--proxy', dest='proxy_url',
                        help='Specify proxy server address (e.g.: http://192.168.1.100:1888)')
-    parser.add_argument('--force', action='store_true', 
+    parser.add_argument('--force', action='store_true',
                        help='Force execution of operation')
-    parser.add_argument('--verbose', action='store_true', 
+    parser.add_argument('--verbose', action='store_true',
                        help='Show detailed output')
     parser.add_argument('--dry-run', action='store_true',
                        help='Show operations to be performed without actually executing')
-    
+    parser.add_argument('--foreground', action='store_true',
+                        help='Run in foreground mode (for Docker containers)')
+
     return parser
 
 
@@ -3955,23 +3967,24 @@ def main():
     """Main function"""
     parser = create_argument_parser()
     args = parser.parse_args()
-    
+
     # Create manager instance
     manager = CrossPlatformManager()
     manager.verbose = args.verbose
-    
+
     # Process server name parameter: positional parameter takes precedence over --name parameter
     target_server = args.server_name if args.server_name else args.target_server
     proxy_url = args.proxy_url
-    
+    foreground = args.foreground
+
     # Execute command
     try:
         command = args.command
         force = args.force
-        
+
         # Detailed commands
         if command == 'start':
-            manager.start_servers(target_server, proxy_url)
+            manager.start_servers(target_server, proxy_url, foreground)
         elif command == 'stop':
             if target_server:
                 manager.stop_specific_server(target_server)
@@ -3981,11 +3994,11 @@ def main():
             if target_server:
                 manager.stop_specific_server(target_server)
                 time.sleep(2)
-                manager.start_servers(target_server, proxy_url)
+                manager.start_servers(target_server, proxy_url, foreground)
             else:
                 manager.stop_all_servers(force)
                 time.sleep(2)
-                manager.start_servers(None, proxy_url)
+                manager.start_servers(None, proxy_url, foreground)
         elif command == 'status' or command == 'ps':
             manager.show_status()
         elif command == 'logs' or command == 'log':
@@ -4014,7 +4027,7 @@ def main():
                 manager.log_info("Usage example: python manage.py unregister --proxy-url http://192.168.1.100:1888")
                 manager.log_info("Or specify server: python manage.py unregister --name example --proxy-url http://192.168.1.100:1888")
                 return
-            
+
             manager.show_header("LiteMCP Framework", f"Unregister {'Specific Server' if target_server else 'All Servers'} from Proxy")
             manager.show_section("Unregister MCP Server", manager.icons['network'])
             manager._auto_unregister_servers_from_proxy(proxy_url, target_server)
@@ -4022,16 +4035,16 @@ def main():
             manager.validate_registry_consistency()
         elif command == 'fix':
             manager.cleanup_registry_records()
-        
+
         # Quick commands (aliases)
         elif command == 'up':
-            manager.start_servers(target_server, proxy_url)
+            manager.start_servers(target_server, proxy_url, foreground)
         elif command == 'down':
             if target_server:
                 manager.stop_specific_server(target_server)
             else:
                 manager.stop_all_servers(True)  # The 'down' command defaults to forcing a stop
-        
+
     except KeyboardInterrupt:
         manager.log_warning("Operation interrupted by user")
         sys.exit(1)
