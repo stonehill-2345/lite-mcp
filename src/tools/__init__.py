@@ -31,6 +31,11 @@ AVAILABLE_SERVERS = {
         "module": "src.tools.common_tools.check_server",
         "class": "CheckMCPServer"
     },
+    "mouse_tools": {
+        "description": "Mouse interaction MCP server providing mouse control tools",
+        "module": "src.tools.mouse_tools.mouse_server",
+        "class": "MouseMCPServer"
+    },
 }
 
 # Export all server classes (optional, for direct import)

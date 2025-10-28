@@ -49,6 +49,14 @@ mcp_servers:
     auto_restart: true
     description: "Common detection tools"
 
+  mouse_tools:
+    enabled: true
+    server_type: "mouse_tools"
+    transport: "http"
+    host: null                       # Automatically gets current machine IP, externally accessible
+    port: null                       # Auto-assigned port
+    auto_restart: true
+    description: "Mouse interaction tools"
 
 
 # Additional custom servers
