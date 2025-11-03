@@ -111,11 +111,21 @@ class McpClientManager {
 
     // Create Streamable HTTP transport
     const baseUrl = new URL(config.serverConfig.url)
-    const transport = new StreamableHTTPClientTransport(baseUrl)
+    const customHeaders = config.serverConfig?.headers
+    const hasCustomHeaders = customHeaders && typeof customHeaders === 'object' && Object.keys(customHeaders).length > 0
+
+    const transportOptions = hasCustomHeaders
+      ? {
+          requestInit: {
+            headers: { ...customHeaders }
+          }
+        }
+      : undefined
+
+    const transport = new StreamableHTTPClientTransport(baseUrl, transportOptions)
     
     // Store client and transport
     this.clients.set(sessionId, { client, transport })
-    
     // Store session information
     this.sessions.set(sessionId, {
       serverName: config.serverName,

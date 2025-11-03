@@ -578,6 +578,7 @@ const parseJsonConfig = () => {
         type: serverType,
         url: serverConfig.url || '',
         apiPath: serverConfig.apiPath || '', // Streamable HTTP type specific
+        headers: serverConfig.headers || {}, // HTTP请求头
 
         description: serverConfig.description || '',
         enabled: false, // Will be restored from user state
@@ -643,6 +644,7 @@ const connectToServer = async (server, skipStateUpdate = false) => {
         args: server.args,
         env: server.env,
         url: server.url,
+        headers: server.headers,
         description: server.description
       }
     }
@@ -657,7 +659,8 @@ const connectToServer = async (server, skipStateUpdate = false) => {
       type: server.type,
       url: server.url,
       apiPath: server.apiPath || 'none',
-      hasApiPath: !!(server.type === 'streamable-http' && server.apiPath)
+      hasApiPath: !!(server.type === 'streamable-http' && server.apiPath),
+      headers: server.headers
     })
 
     const sessionId = await mcpClient.connect(config)
@@ -1180,6 +1183,11 @@ const handleAddServerFromCenter = (serverData) => {
     // If Streamable HTTP type, add apiPath
     if (serverData.serverType === 'streamable-http' && serverData.serverConfig.apiPath) {
       newServerConfig.apiPath = serverData.serverConfig.apiPath
+    }
+
+    // 如果有 headers 配置，添加到服务器配置中
+    if (serverData.serverConfig.headers && Object.keys(serverData.serverConfig.headers).length > 0) {
+      newServerConfig.headers = serverData.serverConfig.headers
     }
 
     // Create new mcpServers object, put new config at the front
@@ -2023,19 +2031,19 @@ defineExpose({
             display: flex;
             gap: 8px;
             align-items: center;
-
+            
             .el-button {
               &.is-disabled {
                 opacity: 0.5;
                 cursor: not-allowed;
               }
-
+              
               &[type="danger"] {
                 &.is-disabled {
                   background: #f5f5f5;
                   border-color: #e4e7ed;
                   color: #c0c4cc;
-
+                  
                   &:hover {
                     background: #f5f5f5;
                     border-color: #e4e7ed;

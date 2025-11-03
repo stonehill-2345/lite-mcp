@@ -39,6 +39,7 @@ export class McpConnectionService {
           args: server.args,
           env: server.env,
           url: server.url,
+          headers: server.headers,
           description: server.description
         }
       }
@@ -53,7 +54,8 @@ export class McpConnectionService {
         type: server.type,
         url: server.url,
         apiPath: server.apiPath || 'None',
-        hasApiPath: !!(server.type === 'streamable-http' && server.apiPath)
+        hasApiPath: !!(server.type === 'streamable-http' && server.apiPath),
+        headers: server.headers
       })
 
       const sessionId = await this.mcpClient.connect(config)
