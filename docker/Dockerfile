@@ -1,68 +1,55 @@
 # LiteMCP Backend Docker Configuration
-# Use official uv image with Python
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+# Use nikolaik/python-nodejs image (full version with build tools)
+# This includes Python 3.12, Node.js 24, and gcc for compiling native extensions
+FROM nikolaik/python-nodejs:python3.12-nodejs24
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies and minimal Python packages for fallback
-RUN apt-get update && apt-get install -y \
-    curl \
-    procps \
-    git \
-    python3-pip \
-    python3-yaml \
-    python3-requests \
-    && rm -rf /var/lib/apt/lists/* \
-    && echo "✅ Installed system dependencies and minimal Python packages for fallback"
-
-# Install Node.js for external MCP services that use npx
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs \
-    && echo "✅ Installed Node.js $(node --version) and npm $(npm --version) for external MCP services" \
-    && echo "🔧 Node.js and npm are ready for external MCP services"
-
 # Copy dependency files first for better caching
+# Note: uv is already included in nikolaik/python-nodejs:python3.12-nodejs24
 COPY pyproject.toml README.md ./
 
-# Configure China mirror sources for better connectivity in China
-# Set uv index URL to use Tsinghua mirror (using correct environment variable)
-ENV UV_DEFAULT_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple
-ENV UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
-ENV UV_EXTRA_INDEX_URL=https://pypi.org/simple
-ENV UV_CACHE_DIR=/root/.cache/uv
-ENV UV_LINK_MODE=copy
+# Configure Python package sources (Aliyun primary, PyPI fallback)
+# Note: Tsinghua mirror currently returns 403, using official PyPI as backup
+ENV UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ \
+    UV_EXTRA_INDEX_URL=https://pypi.org/simple \
+    UV_CACHE_DIR=/root/.cache/uv \
+    UV_LINK_MODE=copy \
+    UV_HTTP_TIMEOUT=120 \
+    UV_CONCURRENT_DOWNLOADS=10 \
+    PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ \
+    PIP_EXTRA_INDEX_URL=https://pypi.org/simple \
+    PIP_TRUSTED_HOST=mirrors.aliyun.com \
+    PIP_TIMEOUT=120 \
+    PIP_RETRIES=5
 
-# Configure pip mirror as fallback (for uv pip install)
-RUN mkdir -p /root/.pip && \
-    echo "[global]" > /root/.pip/pip.conf && \
-    echo "index-url = https://pypi.tuna.tsinghua.edu.cn/simple" >> /root/.pip/pip.conf && \
-    echo "extra-index-url = https://pypi.org/simple" >> /root/.pip/pip.conf && \
-    echo "trusted-host = pypi.tuna.tsinghua.edu.cn" >> /root/.pip/pip.conf && \
-    echo "timeout = 120" >> /root/.pip/pip.conf && \
-    echo "✅ Configured China mirror sources (Tsinghua University)"
-
-# Install dependencies using uv with enhanced retry mechanism
-# Only copy source code after dependencies are installed for better caching
-RUN --mount=type=cache,target=/tmp/uv-cache \
+# Install dependencies using uv with fallback
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
     echo "📦 Installing dependencies using uv..." && \
-    uv --version && echo "✅ uv is available" && \
+    echo "🔍 System info:" && \
+    python --version && \
+    node --version && \
+    uv --version && \
+    echo "" && \
+    echo "🔍 Environment: UV_INDEX_URL=$UV_INDEX_URL" && \
+    echo "" && \
+    echo "⏱️  Attempt 1: Using Aliyun mirror" && \
     ( \
-        echo "⏱️ Attempt 1: Trying offline sync first..." && \
-        UV_CACHE_DIR=/tmp/uv-cache uv sync --frozen --no-dev --offline 2>/dev/null && \
-        echo "✅ Offline sync successful" \
+        set -x && \
+        uv sync --no-dev --verbose 2>&1 && \
+        set +x && \
+        echo "" && \
+        echo "✅ SUCCESS: Dependencies installed from Aliyun mirror" \
     ) || ( \
-        echo "⏱️ Attempt 2: Trying online sync with extended timeout..." && \
-        timeout 120 sh -c "UV_CACHE_DIR=/tmp/uv-cache uv sync --no-dev --retry 3" 2>/dev/null && \
-        echo "✅ Online sync successful" \
-    ) || ( \
-        echo "⏱️ Attempt 3: Trying with different resolver strategy..." && \
-        timeout 90 sh -c "UV_CACHE_DIR=/tmp/uv-cache uv sync --no-dev --resolution lowest-direct" 2>/dev/null && \
-        echo "✅ Alternative sync successful" \
-    ) || ( \
-        echo "⚠️ All sync attempts failed, dependencies will be installed at runtime" && \
-        echo "💡 This is usually due to network connectivity issues during build" && \
-        echo "🔧 The entrypoint script will handle dependency installation" \
+        echo "" && \
+        echo "⚠️  Aliyun mirror failed, trying Official PyPI..." && \
+        echo "⏱️  Attempt 2: Using Official PyPI" && \
+        set -x && \
+        UV_INDEX_URL=https://pypi.org/simple uv sync --no-dev --verbose 2>&1 && \
+        set +x && \
+        echo "" && \
+        echo "✅ SUCCESS: Dependencies installed from Official PyPI" \
     )
 
 # Now copy the rest of the application code

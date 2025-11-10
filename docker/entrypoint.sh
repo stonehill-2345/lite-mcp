@@ -16,14 +16,15 @@ echo "   - Proxy: ${PROXY_HOST}:${PROXY_PORT}"
 echo "   - API: ${API_HOST}:${API_PORT}"
 echo "   - Additional args: ${MANAGE_ARGS}"
 
-# Configure China mirror sources for runtime (if not already set)
+# Configure Python package sources for runtime
 if [ -z "$UV_INDEX_URL" ]; then
-    export UV_DEFAULT_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple
-    export UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+    export UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
     export UV_EXTRA_INDEX_URL=https://pypi.org/simple
     export UV_CACHE_DIR=/root/.cache/uv
     export UV_LINK_MODE=copy
-    echo "🇨🇳 Configured China mirror sources for better connectivity"
+    export UV_HTTP_TIMEOUT=120
+    export UV_CONCURRENT_DOWNLOADS=10
+    echo "🌐 Configured Python package sources"
 fi
 
 # Create runtime directories if they don't exist
@@ -78,25 +79,71 @@ if command -v uv >/dev/null 2>&1; then
     # Only sync dependencies if we don't have a valid virtual environment
     if [ "$USE_EXISTING_VENV" != "1" ]; then
         echo "📦 Installing dependencies using uv..."
-        echo "⏱️ Trying offline mode first..."
-        UV_INDEX_URL="$UV_INDEX_URL" uv sync --no-dev --offline 2>&1 && echo "✅ Offline sync successful" || {
-            echo "⏱️ Trying online mode with timeout (120s)..."
-            # Correct way to use timeout with environment variables
-            timeout 120 sh -c "UV_INDEX_URL='$UV_INDEX_URL' uv sync --no-dev" 2>&1 && echo "✅ Online sync successful" || {
-                echo "⚠️ uv sync failed or timed out, trying alternative installation methods..."
-                echo "🔍 Debug info: Checking current directory and pyproject.toml"
-                ls -la
-                head -20 pyproject.toml
+        echo "================================================"
+        echo "⏱️  Attempt 1: Using Aliyun mirror"
+        echo "================================================"
 
-                # Try to install with editable mode as fallback
-                echo "🔧 Trying pip install -e . as alternative method..."
-                UV_INDEX_URL="$UV_INDEX_URL" pip install -e . 2>&1 && {
-                    echo "✅ Alternative installation successful"
+        set -x  # Enable command tracing
+        UV_CONCURRENT_DOWNLOADS=10 uv sync --no-dev --retry 5 --verbose --no-progress 2>&1 && {
+            set +x
+            echo ""
+            echo "✅ SUCCESS: Dependencies installed from Aliyun mirror"
+            echo "================================================"
+        } || {
+            set +x
+            echo ""
+            echo "⚠️  Aliyun mirror failed, trying Official PyPI..."
+            echo ""
+            echo "⏱️  Attempt 2: Using Official PyPI"
+            echo "================================================"
+
+            set -x
+            UV_INDEX_URL="https://pypi.org/simple" uv sync --no-dev --retry 3 --verbose --no-progress 2>&1 && {
+                set +x
+                echo ""
+                echo "✅ SUCCESS: Dependencies installed from Official PyPI"
+                echo "================================================"
+            } || {
+                set +x
+                echo ""
+                echo "❌ All uv sync attempts failed"
+                echo "🔧 Trying pip install -e . as fallback..."
+                echo "================================================"
+
+                # Ensure build dependencies are installed first
+                echo "🔧 Installing build dependencies first..."
+                pip install --no-cache-dir hatchling wheel setuptools -q 2>&1 || echo "Build deps may already exist"
+                echo ""
+
+                echo "🔍 Debug info:"
+                ls -la
+                echo ""
+                echo "🔍 pyproject.toml (first 20 lines):"
+                head -20 pyproject.toml
+                echo "================================================"
+                echo "🔧 Installing project dependencies..."
+                echo ""
+
+                set -x
+                pip install -e . -v 2>&1 && {
+                    set +x
+                    echo ""
+                    echo "✅ SUCCESS: Dependencies installed via pip install -e ."
+                    echo "================================================"
                     export USE_UV_PIP_FALLBACK=1
                 } || {
-                    echo "❌ All dependency installation methods failed"
-                    echo "💡 This indicates a configuration issue with pyproject.toml or network connectivity problems"
-                    echo "💡 Please check pyproject.toml dependencies and network connectivity"
+                    set +x
+                    echo ""
+                    echo "❌ FATAL: All dependency installation methods failed"
+                    echo "💡 Possible causes:"
+                    echo "   1. Network connectivity issues"
+                    echo "   2. Invalid pyproject.toml configuration"
+                    echo "   3. Incompatible package versions"
+                    echo "💡 Please check:"
+                    echo "   - Network connection to PyPI mirrors"
+                    echo "   - pyproject.toml dependencies section"
+                    echo "   - Build logs above for specific errors"
+                    echo "================================================"
                     exit 1
                 }
             }
@@ -116,22 +163,10 @@ else
     exit 1
 fi
 
-# Add proxy configuration if specified
-if [ -n "$PROXY_HOST" ] && [ "$PROXY_HOST" != "0.0.0.0" ]; then
-    CMD="$CMD --proxy-host $PROXY_HOST"
-fi
-
-if [ -n "$PROXY_PORT" ] && [ "$PROXY_PORT" != "1888" ]; then
-    CMD="$CMD --proxy-port $PROXY_PORT"
-fi
-
-# Add API configuration if specified
-if [ -n "$API_HOST" ] && [ "$API_HOST" != "0.0.0.0" ]; then
-    CMD="$CMD --api-host $API_HOST"
-fi
-
-if [ -n "$API_PORT" ] && [ "$API_PORT" != "9000" ]; then
-    CMD="$CMD --api-port $API_PORT"
+# Add proxy URL if MCP_SERVER_HOST is set
+if [ -n "$MCP_SERVER_HOST" ] && [ "$MCP_SERVER_HOST" != "http://127.0.0.1:1888" ]; then
+    echo "🔗 Configuring proxy URL: $MCP_SERVER_HOST"
+    CMD="$CMD --proxy-url $MCP_SERVER_HOST"
 fi
 
 # Add any additional arguments

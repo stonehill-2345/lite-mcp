@@ -9,10 +9,21 @@ COPY package*.json ./
 # Copy source code first
 COPY . .
 
-# Install dependencies with cache mount (much faster rebuilds)
-# Use /tmp for cache to work across different systems and users
+# Install dependencies with cache mount
+# Try Taobao npm mirror first, fallback to official registry
 RUN --mount=type=cache,target=/tmp/npm-cache \
-    npm ci --cache /tmp/npm-cache
+    ( \
+        # Try Taobao npm mirror for faster downloads in China \
+        npm config set registry https://registry.npmmirror.com && \
+        npm ci --cache /tmp/npm-cache && \
+        echo "✅ Installed dependencies (npm mirror)" \
+    ) || ( \
+        # Fallback to official npm registry for international users \
+        echo "⚠️ npm mirror failed, using official npm registry" && \
+        npm config set registry https://registry.npmjs.org && \
+        npm ci --cache /tmp/npm-cache && \
+        echo "✅ Installed dependencies (Official registry)" \
+    )
 
 # Build arguments for environment variables
 ARG VITE_API_BASE_URL

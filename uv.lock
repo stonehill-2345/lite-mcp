@@ -585,7 +585,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "fastmcp", specifier = ">=2.12.0" },
     { name = "httpx", specifier = ">=0.28.0" },
-    { name = "netifaces", specifier = ">=0.11.0" },
+    { name = "netifaces", specifier = ">=0.10.9,<0.11" },
     { name = "pillow", specifier = ">=10.4.0" },
     { name = "psutil", specifier = ">=7.0.0" },
     { name = "pycryptodome", specifier = ">=3.23.0" },
@@ -772,9 +772,9 @@ wheels = [
 
 [[package]]
 name = "netifaces"
-version = "0.11.0"
+version = "0.10.9"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a6/91/86a6eac449ddfae239e93ffc1918cf33fd9bab35c04d1e963b311e347a73/netifaces-0.11.0.tar.gz", hash = "sha256:043a79146eb2907edf439899f262b3dfe41717d34124298ed281139a8b93ca32", size = 30106 }
+sdist = { url = "https://files.pythonhosted.org/packages/0d/18/fd6e9c71a35b67a73160ec80a49da63d1eed2d2055054cc2995714949132/netifaces-0.10.9.tar.gz", hash = "sha256:2dee9ffdd16292878336a58d04a20f0ffe95555465fee7c9bd23b3490ef2abf3", size = 28844 }
 
 [[package]]
 name = "openapi-core"
