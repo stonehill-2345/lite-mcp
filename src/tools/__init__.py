@@ -36,6 +36,11 @@ AVAILABLE_SERVERS = {
         "module": "src.tools.mouse_tools.mouse_server",
         "class": "MouseMCPServer"
     },
+    "file_system": {
+        "description": "File system MCP server providing file system operations",
+        "module": "src.tools.file_system.file_system",
+        "class": "FileSystemMCPServer"
+    },
 }
 
 # Export all server classes (optional, for direct import)
