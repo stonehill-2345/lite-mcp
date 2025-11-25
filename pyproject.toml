@@ -24,7 +24,7 @@ dependencies = [
     "chardet>=5.2.0",
     "Pillow>=10.4.0",
     "uiautomator2>=3.2.0",
-    "netifaces>=0.11.0",
+    "netifaces>=0.10.9,<0.11",
     "pyautogui>=0.9.54",
 ]
 
@@ -35,8 +35,8 @@ dev = [
 ]
 
 [tool.uv]
-index-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-extra-index-url = ["https://mirrors.aliyun.com/pypi/simple/", "https://pypi.org/simple"]
+index-url = "https://mirrors.aliyun.com/pypi/simple/"
+extra-index-url = ["https://pypi.org/simple"]
 
 [project.scripts]
 litemcp = "src.cli:main"
@@ -71,7 +71,7 @@ pymysql = "^1.1.0"
 chardet = "^5.2.0"
 Pillow = "^10.4.0"
 uiautomator2 = "^3.2.0"
-netifaces="^0.11.0"
+netifaces=">=0.10.9,<0.11"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"

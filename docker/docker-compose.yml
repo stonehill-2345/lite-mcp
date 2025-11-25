@@ -12,10 +12,6 @@ services:
       - "${PROXY_PORT:-1888}:1888"  # Proxy server
       - "${API_PORT:-9000}:9000"  # API server
       # - "8000-8100:8000-8100"  # MCP servers. Generally, proxy(1888) provides unified external services. If it is necessary to expose each mcp server port to external calls, it can be enabled
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-      - 223.5.5.5  # Alibaba DNS for China
     environment:
       - PROXY_HOST=${PROXY_HOST:-0.0.0.0}
       - PROXY_PORT=${PROXY_PORT:-1888}
@@ -70,8 +66,8 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 192.168.220.0/24
-          gateway: 192.168.220.1
+        - subnet: 192.168.230.0/24
+          gateway: 192.168.230.1
 
 volumes:
   litemcp-runtime:

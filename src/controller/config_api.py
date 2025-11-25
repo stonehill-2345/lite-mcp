@@ -64,7 +64,13 @@ class StatusResponse(BaseModel):
 app = FastAPI(
     title="LiteMCP Configuration API",
     description="API service for dynamically generating MCP client configurations",
-    version="1.0.0"
+    version="1.0.0",
+    servers=[
+        {
+            "url": "http://localhost:9000",
+            "description": "Local development environment"
+        },
+    ]
 )
 
 

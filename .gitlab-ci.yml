@@ -1,0 +1,109 @@
+# GitLab CI/CD Pipeline for LiteMCP Framework
+# Setup Docs -> docs/GitlabCISetup.md
+#
+# Required GitLab CI/CD Variables (Settings > CI/CD > Variables):
+# - PRODUCTION_API_URL: Production API server URL (e.g., https://api.your-domain.com)
+# - PRODUCTION_PROXY_URL: Production proxy server URL (e.g., https://proxy.your-domain.com)
+# - STAGING_API_URL: Staging API server URL (e.g., https://api-staging.your-domain.com)
+# - STAGING_PROXY_URL: Staging proxy server URL (e.g., https://proxy-staging.your-domain.com)
+
+stages:
+  - deploy
+
+# Deploy to production environment
+deploy_production:
+  stage: deploy
+  only:
+    - main
+  tags:
+    - litemcp
+  script:
+    - echo "🚀 Deploying LiteMCP to production server..."
+    
+    # Create production environment directory
+    - mkdir -p /home/gitlab-runner/litemcp
+    - cd /home/gitlab-runner/litemcp
+    
+    # Sync code to production directory
+    - echo "📦 Syncing code to production directory..."
+    - cp -r $CI_PROJECT_DIR/* ./
+    - cp -r $CI_PROJECT_DIR/.* . 2>/dev/null || true
+    
+    # Set production environment variables
+    - echo "🔧 Setting production environment variables..."
+    # Used for front-end access to back-end API services
+    - export API_BASE_URL="${PRODUCTION_API_URL:-http://localhost:9000}"
+    # Used to clarify which proxy service to register to after enabling MCP functionality
+    - export PROXY_BASE_URL="${PRODUCTION_PROXY_URL:-http://localhost:1888}"
+    # Used to query and generate MCP configuration, determining which proxy to access when using MCP
+    - export MCP_SERVER_HOST="${PRODUCTION_MCP_SERVER_HOST:-http://localhost:1888}"
+    - export DEBUG_MODE="false"
+    - export FRONTEND_PORT="2345"
+    - echo "API URL:" $API_BASE_URL
+    - echo "Proxy URL:" $PROXY_BASE_URL
+    
+    # Clean up ONLY unused networks (won't affect running services)
+    - echo "🧹 Cleaning up unused Docker resources..."
+    - docker network prune -f || true
+    
+    # Use blue-green deployment strategy
+    - echo "🚀 Starting blue-green deployment..."
+    - cd docker && ./deploy.sh blue-green
+    
+    # Verify deployment success
+    - echo "🔍 Verifying deployment..."
+    - ./deploy.sh status
+    
+    - echo "✅ Production deployment completed!"
+  environment:
+    name: production
+    url: http://localhost:2345
+#  when: manual
+
+# Deploy to staging environment
+deploy_staging:
+  stage: deploy
+  only:
+    - develop
+  tags:
+    - litemcp-test
+  script:
+    - echo "🚀 Deploying LiteMCP to staging server..."
+    
+    # Create staging environment directory
+    - mkdir -p /home/gitlab-runner/litemcp-staging
+    - cd /home/gitlab-runner/litemcp-staging
+    
+    # Sync code to staging directory
+    - echo "📦 Syncing code to staging directory..."
+    - cp -r $CI_PROJECT_DIR/* ./
+    - cp -r $CI_PROJECT_DIR/.* . 2>/dev/null || true
+    
+    # Set staging environment variables
+    - echo "🔧 Setting staging environment variables..."
+    - export API_BASE_URL="${STAGING_API_URL:-https://api-staging.your-domain.com}"
+    - export PROXY_BASE_URL="${STAGING_PROXY_URL:-https://proxy-staging.your-domain.com}"
+    - export MCP_SERVER_HOST="${STAGING_MCP_SERVER_HOST:-https://proxy-staging.your-domain.com}"
+    - export DEBUG_MODE="true"
+    - export FRONTEND_PORT="2345"
+    - echo "API URL:" $API_BASE_URL
+    - echo "Proxy URL:" $PROXY_BASE_URL
+    
+    # Clean up ONLY unused networks (won't affect running services)
+    - echo "🧹 Cleaning up unused Docker resources..."
+    - docker network prune -f || true
+    
+    # Use blue-green deployment strategy
+    - echo "🚀 Starting blue-green deployment..."
+    - cd docker && ./deploy.sh blue-green
+    
+    # Verify deployment success
+    - echo "🔍 Verifying deployment..."
+    - ./deploy.sh status
+    
+    - echo "✅ Staging deployment completed!"
+  environment:
+    name: staging
+    url: http://localhost:2345
+  when: on_success
+
