@@ -58,6 +58,15 @@ mcp_servers:
     auto_restart: true
     description: "Mouse interaction tools"
 
+  file_system:
+    enabled: true
+    server_type: "file_system"
+    transport: "http"
+    host: null                       # Automatically gets current machine IP, externally accessible
+    port: null                       # Auto-assigned port
+    auto_restart: true
+    description: "File system MCP server providing file system basic operations"
+
 
 # Additional custom servers
 
