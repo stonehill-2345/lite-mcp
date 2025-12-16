@@ -41,6 +41,11 @@ AVAILABLE_SERVERS = {
         "module": "src.tools.file_system.file_system",
         "class": "FileSystemMCPServer"
     },
+    "db": {
+        "description": "Database operation MCP server",
+        "module": "src.tools.operate_mysql.opmysql_server",
+        "class": "Server"
+    },
 }
 
 # Export all server classes (optional, for direct import)
