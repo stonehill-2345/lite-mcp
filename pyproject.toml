@@ -26,6 +26,7 @@ dependencies = [
     "uiautomator2>=3.2.0",
     "netifaces>=0.10.9,<0.11",
     "pyautogui>=0.9.54",
+    "redis>=5.0.0",
 ]
 
 [project.optional-dependencies]
@@ -72,6 +73,7 @@ chardet = "^5.2.0"
 Pillow = "^10.4.0"
 uiautomator2 = "^3.2.0"
 netifaces=">=0.10.9,<0.11"
+redis = "^5.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"

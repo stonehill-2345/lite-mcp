@@ -159,7 +159,7 @@ def get_local_ip() -> str | None:
     except Exception as e:
         logger.warning(f"Failed to get IP via traversing network interfaces: {str(e)}")
 
-    # Method 3: Get address via hostname
+    Method 3: Get address via hostname
     try:
         host_name = socket.gethostname()
         host_ip = socket.gethostbyname(host_name)

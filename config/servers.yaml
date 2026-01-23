@@ -67,6 +67,15 @@ mcp_servers:
     auto_restart: true
     description: "File system MCP server providing file system basic operations"
 
+  redis:
+    enabled: true
+    server_type: "redis"
+    transport: "http"
+    host: null                       # Automatically gets current machine IP, externally accessible
+    port: null                       # Auto-assigned port
+    auto_restart: true
+    description: "Redis database operation MCP server"
+
 
 # Additional custom servers
 
