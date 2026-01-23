@@ -46,6 +46,11 @@ AVAILABLE_SERVERS = {
         "module": "src.tools.operate_mysql.opmysql_server",
         "class": "Server"
     },
+    "redis": {
+        "description": "Redis database operation MCP server providing basic Redis operations",
+        "module": "src.tools.operate_redis.opredis_server",
+        "class": "RedisMCPServer"
+    },
 }
 
 # Export all server classes (optional, for direct import)
