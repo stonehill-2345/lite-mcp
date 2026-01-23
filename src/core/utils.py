@@ -5,7 +5,7 @@ import os
 import socket
 import logging
 import subprocess
-# import netifaces
+import netifaces
 from pathlib import Path
 from datetime import datetime
 
@@ -142,24 +142,24 @@ def get_local_ip() -> str | None:
     except Exception as e:
         logger.warning(f"Failed to get IP via UDP socket: {str(e)}")
 
-    # # Method 2: Try traversing all network interfaces
-    # try:
-    #     # Traverse all network interfaces
-    #     for interface in netifaces.interfaces():
-    #         # Get IPv4 addresses
-    #         addresses = netifaces.ifaddresses(interface).get(netifaces.AF_INET, [])
-    #         for addr_info in addresses:
-    #             ip = addr_info.get('addr')
-    #             # Exclude loopback and invalid addresses
-    #             if ip and not ip.startswith('127.') and ip != '0.0.0.0':
-    #                 logger.debug(f"Got IP via network interface {interface}: {ip}")
-    #                 return ip
-    # except ImportError:
-    #     logger.warning("netifaces module not installed, unable to get IP via network interfaces")
-    # except Exception as e:
-    #     logger.warning(f"Failed to get IP via traversing network interfaces: {str(e)}")
+    # Method 2: Try traversing all network interfaces
+    try:
+        # Traverse all network interfaces
+        for interface in netifaces.interfaces():
+            # Get IPv4 addresses
+            addresses = netifaces.ifaddresses(interface).get(netifaces.AF_INET, [])
+            for addr_info in addresses:
+                ip = addr_info.get('addr')
+                # Exclude loopback and invalid addresses
+                if ip and not ip.startswith('127.') and ip != '0.0.0.0':
+                    logger.debug(f"Got IP via network interface {interface}: {ip}")
+                    return ip
+    except ImportError:
+        logger.warning("netifaces module not installed, unable to get IP via network interfaces")
+    except Exception as e:
+        logger.warning(f"Failed to get IP via traversing network interfaces: {str(e)}")
 
-    # Method 3: Get address via hostname
+    Method 3: Get address via hostname
     try:
         host_name = socket.gethostname()
         host_ip = socket.gethostbyname(host_name)
